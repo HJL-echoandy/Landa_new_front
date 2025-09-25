@@ -10,6 +10,11 @@ import MessagesScreen from '../screens/MessagesScreen';
 import ChatScreen from '../screens/ChatScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AddressManagementScreen from '../screens/AddressManagementScreen';
+import MyFavoritesScreen from '../screens/MyFavoritesScreen';
+import TherapistProfileScreen from '../screens/TherapistProfileScreen';
+import MassageServiceDetailScreen from '../screens/MassageServiceDetailScreen';
+import BookingScreen from '../screens/BookingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,6 +68,11 @@ export default function RootNavigator() {
       <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AddressManagement" component={AddressManagementScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MyFavorites" component={MyFavoritesScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TherapistProfile" component={TherapistProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MassageServiceDetail" component={MassageServiceDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

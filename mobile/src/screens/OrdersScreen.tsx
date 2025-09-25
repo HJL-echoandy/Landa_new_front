@@ -132,18 +132,13 @@ export default function OrdersScreen() {
           }}
         >
           {/* Title Bar */}
-          <Box flexDirection="row" alignItems="center" p="$4">
-            <TouchableOpacity>
-              <Ionicons name="arrow-back" size={24} color="#3D5A4B" />
-            </TouchableOpacity>
+          <Box flexDirection="row" alignItems="center" justifyContent="center" p="$4">
             <Heading
-              flex={1}
               textAlign="center"
               size="xl"
               style={{
                 fontFamily: 'Manrope_700Bold',
                 color: '#3D5A4B',
-                paddingRight: 24,
               }}
             >
               My Orders

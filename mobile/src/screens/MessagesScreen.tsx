@@ -117,7 +117,7 @@ export default function MessagesScreen() {
         <Box
           flexDirection="row"
           alignItems="center"
-          justifyContent="space-between"
+          justifyContent="center"
           p="$4"
           style={{
             borderBottomWidth: 1,
@@ -125,16 +125,12 @@ export default function MessagesScreen() {
             backgroundColor: '#f8f6f6',
           }}
         >
-          <TouchableOpacity>
-            <Ionicons name="arrow-back" size={24} color="#211115" />
-          </TouchableOpacity>
           <Heading
             size="lg"
             style={{ fontFamily: 'Inter_700Bold', color: '#211115' }}
           >
             Messages
           </Heading>
-          <Box w="$6" />
         </Box>
 
         {/* Search Bar */}

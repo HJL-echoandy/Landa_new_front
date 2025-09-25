@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const therapistsData = [
   {
@@ -49,6 +50,7 @@ const servicesData = [
 
 export default function HomeScreen() {
   const [searchText, setSearchText] = useState('');
+  const navigation = useNavigation();
   
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -60,6 +62,23 @@ export default function HomeScreen() {
   if (!fontsLoaded) {
     return null;
   }
+
+  const handleServicePress = (service: any) => {
+    console.log('Navigate to service:', service.name);
+    // 所有按摩服务都导航到 MassageServiceDetail 页面
+    (navigation as any).navigate('MassageServiceDetail', { 
+      serviceId: service.id, 
+      serviceName: service.name 
+    });
+  };
+
+  const handleTherapistPress = (therapist: any) => {
+    console.log('Navigate to therapist:', therapist.name);
+    // 跳转到治疗师详情页面
+    (navigation as any).navigate('TherapistProfile', { 
+      therapistId: therapist.id 
+    });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -140,7 +159,11 @@ export default function HomeScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 16 }}>
               <Box flexDirection="row" style={{ gap: 16 }}>
                 {therapistsData.map((therapist) => (
-                  <TouchableOpacity key={therapist.id} style={{ width: 128, alignItems: 'center' }}>
+                  <TouchableOpacity 
+                    key={therapist.id} 
+                    style={{ width: 128, alignItems: 'center' }}
+                    onPress={() => handleTherapistPress(therapist)}
+                  >
                     <Image
                       source={{ uri: therapist.image }}
                       style={{ width: 96, height: 96, borderRadius: 48 }}
@@ -201,6 +224,7 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={service.id}
                     style={{ width: '48%', marginBottom: 16 }}
+                    onPress={() => handleServicePress(service)}
                   >
                     <Box style={{ borderRadius: 12, overflow: 'hidden' }}>
                       <Image
