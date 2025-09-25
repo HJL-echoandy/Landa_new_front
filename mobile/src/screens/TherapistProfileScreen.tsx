@@ -114,8 +114,14 @@ export default function TherapistProfileScreen() {
   };
 
   const handleContact = () => {
-    console.log('Contact therapist');
-    // TODO: Navigate to contact screen
+    console.log('Contact therapist:', therapistData.name);
+    // 跳转到聊天页面，传递治疗师信息
+    (navigation as any).navigate('Chat', {
+      contactId: therapistData.id,
+      contactName: therapistData.name,
+      contactAvatar: therapistData.avatar,
+      contactType: 'therapist'
+    });
   };
 
   const renderStarRating = (rating: number, size: number = 20) => {
