@@ -8,6 +8,16 @@ import {
   Button,
   ButtonText,
   Pressable,
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogCloseButton,
+  AlertDialogFooter,
+  AlertDialogBody,
+  Heading,
+  CloseIcon,
+  Icon,
 } from '@gluestack-ui/themed';
 import { SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +59,8 @@ export default function BookingScreen() {
   const [currentMonth, setCurrentMonth] = useState(`${getMonthName(currentMonthIndex)} ${currentYear}`);
   const [displayMonthIndex, setDisplayMonthIndex] = useState(currentMonthIndex);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
   const [addresses, setAddresses] = useState<Address[]>([
     {
       id: '1',
@@ -107,19 +119,37 @@ export default function BookingScreen() {
   const handleConfirmBooking = () => {
     const selectedAddress = addresses.find(addr => addr.isSelected);
     const selectedMonthName = getMonthName(selectedMonth);
-    console.log('Booking confirmed:', {
-      therapist: params?.therapistName,
-      service: params?.serviceName,
-      date: selectedDate,
-      month: selectedMonth,
-      time: selectedTime,
-      address: selectedAddress?.address,
-      price: params?.therapistPrice,
-    });
     
-    // TODO: Send booking data to backend
-    alert(`预约成功！\n\n治疗师：${params?.therapistName}\n服务：${params?.serviceName}\n日期：${selectedMonthName} ${selectedDate}日, ${currentYear}\n时间：${selectedTime}\n地址：${selectedAddress?.label}\n价格：$${params?.therapistPrice}`);
-    navigation.navigate('Main' as never);
+    // Validate required fields
+    if (!selectedTime) {
+      setValidationMessage('请选择预约时间');
+      setShowValidationAlert(true);
+      return;
+    }
+    
+    if (!selectedAddress) {
+      setValidationMessage('请选择地址');
+      setShowValidationAlert(true);
+      return;
+    }
+    
+    const bookingData = {
+      service: params?.serviceName,
+      duration: '90 min', // Default duration
+      price: params?.therapistPrice,
+      address: selectedAddress?.address,
+      date: `${selectedMonthName} ${selectedDate}, ${currentYear}`,
+      time: selectedTime,
+      therapist: params?.therapistName,
+      subtotal: params?.therapistPrice,
+      discount: 20, // Example discount
+      total: (params?.therapistPrice || 0) - 20,
+    };
+    
+    console.log('Navigating to OrderConfirmation with:', bookingData);
+    
+    // Navigate to OrderConfirmation page
+    (navigation as any).navigate('OrderConfirmation', bookingData);
   };
 
   const handleAddressSelect = (addressId: string) => {
@@ -504,6 +534,40 @@ export default function BookingScreen() {
           onClose={() => setShowAddAddressModal(false)}
           onSave={handleSaveNewAddress}
         />
+
+        {/* Validation Alert Dialog */}
+        <AlertDialog
+          isOpen={showValidationAlert}
+          onClose={() => setShowValidationAlert(false)}
+          size="md"
+        >
+          <AlertDialogBackdrop />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <Heading size="lg" fontFamily="Manrope_700Bold">
+                提示
+              </Heading>
+              <AlertDialogCloseButton>
+                <Icon as={CloseIcon} />
+              </AlertDialogCloseButton>
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              <Text fontFamily="Manrope_400Regular" color="#1f1f1f">
+                {validationMessage}
+              </Text>
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                action="secondary"
+                onPress={() => setShowValidationAlert(false)}
+                size="sm"
+              >
+                <ButtonText fontFamily="Manrope_600SemiBold">确定</ButtonText>
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SafeAreaView>
     </Box>
   );

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const ordersData = [
   {
@@ -44,6 +45,7 @@ const sortOptions = [
 ];
 
 export default function OrdersScreen() {
+  const navigation = useNavigation();
   const [searchText, setSearchText] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -114,6 +116,29 @@ export default function OrdersScreen() {
         return 'Book Again';
       default:
         return 'Book Again';
+    }
+  };
+
+  const handleButtonPress = (order: any) => {
+    if (order.status === 'Pending') {
+      // Navigate to order details
+      (navigation as any).navigate('OrderDetails', {
+        orderId: order.id,
+        service: order.serviceName,
+        therapist: order.therapist,
+        date: order.date,
+        time: order.time,
+        address: '123 Serenity Ln, Tranquil City', // TODO: Get from actual order data
+        status: order.status,
+        subtotal: 180.00, // TODO: Get from actual order data
+        discount: 20.00, // TODO: Get from actual order data
+        pointsUsed: 10.00, // TODO: Get from actual order data
+        total: 150.00, // TODO: Get from actual order data
+      });
+    } else {
+      // Handle "Book Again" functionality
+      console.log('Book again for service:', order.serviceName);
+      // TODO: Navigate to booking screen with pre-filled service
     }
   };
 
@@ -351,6 +376,7 @@ export default function OrdersScreen() {
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
+                  onPress={() => handleButtonPress(order)}
                 >
                   <Text
                     style={{

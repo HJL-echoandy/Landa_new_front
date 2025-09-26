@@ -85,13 +85,8 @@ export default function StartScreen() {
         {showButtons ? (
           <Animated.View style={{ width: '100%', maxWidth: 360 }} entering={FadeInUp.duration(800)}>
             <Animated.View entering={FadeInUp.duration(800)}>
-              <Button size="lg" onPress={() => navigation.navigate('Signup') as any} style={{ backgroundColor: '#D4AF37' }}>
-                <ButtonText style={{ color: '#211115', fontFamily: 'Manrope_700Bold' }}>Sign Up</ButtonText>
-              </Button>
-            </Animated.View>
-            <Animated.View entering={FadeInUp.delay(120).duration(500)}>
-              <Button mt="$4" size="lg" variant="outline" onPress={() => navigation.navigate('Login') as any} style={{ borderWidth: 2, borderColor: '#4A4A4A' }}>
-                <ButtonText style={{ color: '#4A4A4A', fontFamily: 'Manrope_700Bold' }}>Log In</ButtonText>
+              <Button size="lg" onPress={() => navigation.navigate('Login') as any} style={{ backgroundColor: '#D4AF37' }}>
+                <ButtonText style={{ color: '#211115', fontFamily: 'Manrope_700Bold' }}>Log In</ButtonText>
               </Button>
             </Animated.View>
           </Animated.View>

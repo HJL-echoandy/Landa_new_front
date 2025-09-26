@@ -9,12 +9,18 @@ import SignupScreen from '../screens/SignupScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ChatScreen from '../screens/ChatScreen';
 import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import ReviewScreen from '../screens/ReviewScreen';
+import InServiceScreen from '../screens/InServiceScreen';
+import ServiceStartNotificationScreen from '../screens/ServiceStartNotificationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AddressManagementScreen from '../screens/AddressManagementScreen';
 import MyFavoritesScreen from '../screens/MyFavoritesScreen';
 import TherapistProfileScreen from '../screens/TherapistProfileScreen';
 import MassageServiceDetailScreen from '../screens/MassageServiceDetailScreen';
 import BookingScreen from '../screens/BookingScreen';
+import OrderConfirmationScreen from '../screens/OrderConfirmationScreen';
+import PaymentCenterScreen from '../screens/PaymentCenterScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -68,11 +74,17 @@ export default function RootNavigator() {
       <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Review" component={ReviewScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="InService" component={InServiceScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ServiceStartNotification" component={ServiceStartNotificationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AddressManagement" component={AddressManagementScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MyFavorites" component={MyFavoritesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TherapistProfile" component={TherapistProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MassageServiceDetail" component={MassageServiceDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="PaymentCenter" component={PaymentCenterScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

@@ -137,6 +137,19 @@ export default function LoginScreen() {
               />
             </Input>
 
+            {/* Auto Registration Notice */}
+            <Text
+              mt="$3"
+              textAlign="center"
+              style={{
+                fontFamily: 'SplineSans_400Regular',
+                fontSize: 12,
+                color: '#6b7f94',
+              }}
+            >
+              Unregistered phone numbers will be automatically registered.
+            </Text>
+
             {/* Login Button */}
             <Button
               size="xl"
