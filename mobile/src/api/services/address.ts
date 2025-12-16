@@ -1,23 +1,51 @@
 import api from '../client';
-import type { Address } from '../../store/addressSlice';
 
-// ========== 请求类型 ==========
+// ========== 请求/响应类型 ==========
 
-export interface CreateAddressRequest {
+export interface AddressResponse {
+  id: number;
+  user_id: number;
   label: string;
-  street: string;
-  building: string;
-  city: string;
+  contact_name: string;
+  contact_phone: string;
   province: string;
-  postalCode: string;
-  contactPerson: string;
-  phoneNumber: string;
-  isDefault?: boolean;
-  latitude?: number;
-  longitude?: number;
+  city: string;
+  district: string;
+  street: string;
+  detail: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_default: boolean;
+  created_at: string;
 }
 
-export type UpdateAddressRequest = Partial<CreateAddressRequest>;
+export interface CreateAddressRequest {
+  label?: string;
+  contact_name: string;
+  contact_phone: string;
+  province: string;
+  city: string;
+  district: string;
+  street: string;
+  detail?: string;
+  latitude?: number;
+  longitude?: number;
+  is_default?: boolean;
+}
+
+export interface UpdateAddressRequest {
+  label?: string;
+  contact_name?: string;
+  contact_phone?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  street?: string;
+  detail?: string;
+  latitude?: number;
+  longitude?: number;
+  is_default?: boolean;
+}
 
 // ========== API 调用 ==========
 
@@ -25,43 +53,35 @@ export const addressApi = {
   /**
    * 获取地址列表
    */
-  getAddresses(): Promise<Address[]> {
-    return api.get('/addresses');
+  getAddresses(): Promise<AddressResponse[]> {
+    return api.get('/users/me/addresses');
   },
 
   /**
-   * 获取单个地址详情
+   * 添加地址
    */
-  getAddress(id: string): Promise<Address> {
-    return api.get(`/addresses/${id}`);
-  },
-
-  /**
-   * 创建地址
-   */
-  createAddress(data: CreateAddressRequest): Promise<Address> {
-    return api.post('/addresses', data);
+  createAddress(data: CreateAddressRequest): Promise<AddressResponse> {
+    return api.post('/users/me/addresses', data);
   },
 
   /**
    * 更新地址
    */
-  updateAddress(id: string, data: UpdateAddressRequest): Promise<Address> {
-    return api.put(`/addresses/${id}`, data);
+  updateAddress(addressId: number, data: UpdateAddressRequest): Promise<AddressResponse> {
+    return api.put(`/users/me/addresses/${addressId}`, data);
   },
 
   /**
    * 删除地址
    */
-  deleteAddress(id: string): Promise<void> {
-    return api.delete(`/addresses/${id}`);
+  deleteAddress(addressId: number): Promise<{ message: string }> {
+    return api.delete(`/users/me/addresses/${addressId}`);
   },
 
   /**
    * 设为默认地址
    */
-  setDefault(id: string): Promise<Address> {
-    return api.post(`/addresses/${id}/set-default`);
+  setDefaultAddress(addressId: number): Promise<AddressResponse> {
+    return api.put(`/users/me/addresses/${addressId}`, { is_default: true });
   },
 };
-

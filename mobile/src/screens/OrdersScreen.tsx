@@ -1,42 +1,21 @@
-import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
-import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation } from '../navigation/hooks';
+import { bookingsApi, BookingListResponse, BookingStatus } from '../api';
 
-const ordersData = [
-  {
-    id: 1,
-    serviceName: 'Swedish Massage',
-    therapist: 'Sarah',
-    date: 'Dec 15, 2023',
-    time: '3:00 PM',
-    status: 'Pending',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDPoCJSp0zZR9pRv39aJQmyWK9OdX19TFk3PFqEfXRjNpWA71iPfWOlP3ZoTUC1GSDXpe99fD-Zp13Cj69nL7WiUHsUKFe1PF2SmBeDo_vmSwDUWni-6StT2EqjsfP3Z0BPeVe9zxU9Krk5-3pBYC01VemqJOMLSfgm11imIQf7nf0cV9GwjGT8CwjMhwcznDpzg-LGr9MnF_Dyy63SDuyGrj_lBUDEkDTuTZIO1ZzV7TNKQLElHZMdhj_xsDQCaf4KbAkl61Fx64MU'
-  },
-  {
-    id: 2,
-    serviceName: 'Deep Tissue Massage',
-    therapist: 'Emily',
-    date: 'Nov 28, 2023',
-    time: '7:00 PM',
-    status: 'Completed',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiSIWh5pZXqOZpnckXaBxaB_hjgANT7aUWYSus9usmTjDMmSjPpG0GOj9-1rgzJB6bgSsWmTev1-M-aIeaalk-9ON7laNoxoNwEVcJYjcfD7X6eu5FHVSr7vyv3eYQTjb3UsOCtgxwrdU52WZoGNriT6zacmVds4PuTh-jrFyijsreP0IplMsS1bzIakx1NvRv09Qt_YlJm0MCT8xQIyowMQCTIBUGQHcRNixuIcYAvrFSTpjvx3rrrCA7OwktfDQ5VDCeIxZD1wnX'
-  },
-  {
-    id: 3,
-    serviceName: 'Aromatherapy Massage',
-    therapist: 'Olivia',
-    date: 'Oct 05, 2023',
-    time: '10:00 AM',
-    status: 'Cancelled',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcnOVZXTLnJi0jxOeN3Z1EcP4CWgeWcxVW2VQApREEGSAQdZYdRBSyfvTeLLW7tOx6DGUQ7LOmdamARJa6VrrYEzLJhzkkgkbvZhgYr80vynW2O-7Ce-9UcDoGQY-TenZ6SwOOzoaejnc6-uwSis-qxFCcF2KusATfRHbSZTah7_5JJkk3NXKe3JaD1lyNh6-d4EYvpkgNOQuClY3gfBNYsds4KrdccFddyX-OZ-rjEZDxqUIQiDuA27nir1M8JlG4Ro_spojmwX2k'
-  }
+const filterOptions: Array<{ label: string; value: BookingStatus | 'all' }> = [
+  { label: 'All', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Confirmed', value: 'confirmed' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
 ];
 
-const filterOptions = ['All', 'Pending', 'Completed', 'Cancelled'];
 const sortOptions = [
   { label: 'Date (newest first)', value: 'date_desc' },
   { label: 'Date (oldest first)', value: 'date_asc' },
@@ -46,54 +25,140 @@ const sortOptions = [
 
 export default function OrdersScreen() {
   const navigation = useAppNavigation();
+  
+  // 数据状态
+  const [orders, setOrders] = useState<BookingListResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // UI 状态
   const [searchText, setSearchText] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedFilter, setSelectedFilter] = useState<BookingStatus | 'all'>('all');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [selectedSort, setSelectedSort] = useState('date_desc');
+  
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
+    Manrope_600SemiBold,
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+
+  // 加载数据
+  const loadOrders = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const query: { status?: BookingStatus; page_size?: number } = { page_size: 50 };
+      if (selectedFilter !== 'all') {
+        query.status = selectedFilter;
+      }
+
+      const data = await bookingsApi.getBookings(query);
+      console.log('✅ Loaded orders:', data.length);
+      setOrders(data);
+    } catch (err: any) {
+      console.error('❌ Failed to load orders:', err);
+      setError(err.message || '加载失败');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [selectedFilter]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const onRefresh = useCallback(() => {
+    loadOrders(true);
+  }, [loadOrders]);
 
   if (!fontsLoaded) {
     return null;
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: BookingStatus) => {
     switch (status) {
-      case 'Completed':
+      case 'completed':
         return '#3D5A4B';
-      case 'Pending':
+      case 'pending':
+      case 'confirmed':
         return '#D3B03B';
-      case 'Cancelled':
+      case 'en_route':
+      case 'in_progress':
+        return '#3B82F6';
+      case 'cancelled':
+      case 'refunded':
         return '#ef4444';
       default:
         return '#6C757D';
     }
   };
 
+  const getStatusLabel = (status: BookingStatus) => {
+    const labels: Record<BookingStatus, string> = {
+      pending: 'Pending',
+      confirmed: 'Confirmed',
+      en_route: 'En Route',
+      in_progress: 'In Progress',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      refunded: 'Refunded',
+    };
+    return labels[status] || status;
+  };
+
+  // 格式化日期
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // 格式化时间
+  const formatTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
   // 筛选和排序逻辑
   const getFilteredAndSortedOrders = () => {
-    let filtered = ordersData;
+    let filtered = orders;
     
-    // 筛选逻辑
-    if (selectedFilter !== 'All') {
-      filtered = ordersData.filter(order => order.status === selectedFilter);
+    // 搜索过滤
+    if (searchText.trim()) {
+      const search = searchText.toLowerCase();
+      filtered = filtered.filter(order => 
+        order.service_name.toLowerCase().includes(search) ||
+        order.therapist_name.toLowerCase().includes(search) ||
+        order.booking_no.toLowerCase().includes(search)
+      );
     }
     
     // 排序逻辑
     const sorted = [...filtered].sort((a, b) => {
       switch (selectedSort) {
         case 'date_desc':
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
+          return new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime();
         case 'date_asc':
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
+          return new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime();
         case 'status':
           return a.status.localeCompare(b.status);
         case 'therapist':
-          return a.therapist.localeCompare(b.therapist);
+          return a.therapist_name.localeCompare(b.therapist_name);
         default:
           return 0;
       }
@@ -102,152 +167,68 @@ export default function OrdersScreen() {
     return sorted;
   };
 
-  const handleSortSelect = (sortValue: string) => {
-    setSelectedSort(sortValue);
-    setShowSortDropdown(false);
+  const filteredOrders = getFilteredAndSortedOrders();
+
+  const handleOrderPress = (order: BookingListResponse) => {
+    navigation.navigate('OrderDetails', {
+      orderId: order.booking_no,
+      service: order.service_name,
+      therapist: order.therapist_name,
+      date: formatDate(order.booking_date),
+      time: formatTime(order.start_time),
+      address: '', // Will be loaded from detail API
+      status: getStatusLabel(order.status) as any,
+      subtotal: order.total_price,
+      total: order.total_price,
+    });
   };
 
-  const getButtonText = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return 'Booking Detail';
-      case 'Completed':
-      case 'Cancelled':
-        return 'Book Again';
-      default:
-        return 'Book Again';
-    }
-  };
-
-  const handleButtonPress = (order: any) => {
-    if (order.status === 'Pending') {
-      // Navigate to order details
-      navigation.navigate('OrderDetails', {
-        orderId: String(order.id),
-        service: order.serviceName,
-        therapist: order.therapist,
-        date: order.date,
-        time: order.time,
-        address: '123 Serenity Ln, Tranquil City', // TODO: Get from actual order data
-        status: order.status,
-        subtotal: 180.00, // TODO: Get from actual order data
-        discount: 20.00, // TODO: Get from actual order data
-        pointsUsed: 10.00, // TODO: Get from actual order data
-        total: 150.00, // TODO: Get from actual order data
-      });
-    } else {
-      // Handle "Book Again" functionality
-      console.log('Book again for service:', order.serviceName);
-      // TODO: Navigate to booking screen with pre-filled service
-    }
-  };
+  // 加载状态
+  if (loading && orders.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <Box flex={1} alignItems="center" justifyContent="center" style={{ backgroundColor: '#f8f6f6' }}>
+          <ActivityIndicator size="large" color="#e64c73" />
+          <Text mt="$4" style={{ fontFamily: 'Manrope_500Medium', color: '#666' }}>
+            Loading orders...
+          </Text>
+        </Box>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Box flex={1} style={{ backgroundColor: '#F7F7F7' }}>
+      <Box flex={1} style={{ backgroundColor: '#f8f6f6' }}>
         {/* Header */}
-        <Box
-          style={{
-            backgroundColor: '#FFFFFF',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
-            elevation: 3,
-          }}
-        >
-          {/* Title Bar */}
-          <Box flexDirection="row" alignItems="center" justifyContent="center" p="$4">
-            <Heading
-              textAlign="center"
-              size="xl"
+        <Box flexDirection="row" alignItems="center" justifyContent="space-between" p="$4" pb="$2">
+          <Box w="$12" />
+          <Heading
+            flex={1}
+            textAlign="center"
+            size="lg"
+            style={{ fontFamily: 'Manrope_700Bold', color: '#211115' }}
+          >
+            Orders
+          </Heading>
+          <Box w="$12" alignItems="flex-end">
+            <TouchableOpacity
+              onPress={() => setShowSortDropdown(!showSortDropdown)}
               style={{
-                fontFamily: 'Manrope_700Bold',
-                color: '#3D5A4B',
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: '#f8f6f6',
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 2,
               }}
             >
-              My Orders
-            </Heading>
-          </Box>
-
-          {/* Search Bar */}
-          <Box px="$4" pt="$2" pb="$4">
-            <Box position="relative">
-              <Input
-                style={{
-                  borderRadius: 25,
-                  backgroundColor: '#F7F7F7',
-                  borderColor: 'transparent',
-                  height: 48,
-                }}
-              >
-                <InputField
-                  placeholder="Search by service or therapist"
-                  value={searchText}
-                  onChangeText={setSearchText}
-                  style={{
-                    fontFamily: 'Manrope_400Regular',
-                    fontSize: 14,
-                    color: '#6C757D',
-                    paddingLeft: 40,
-                  }}
-                  placeholderTextColor="#6C757D"
-                />
-              </Input>
-              <Box position="absolute" left="$3" top="$3" bottom="$3">
-                <Ionicons name="search" size={20} color="#6C757D" />
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Filter Buttons */}
-          <Box flexDirection="row" justifyContent="space-between" alignItems="center" px="$4" pb="$4">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <Box flexDirection="row" style={{ gap: 8 }}>
-                {filterOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    onPress={() => setSelectedFilter(option)}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor: selectedFilter === option ? '#E6C2C2' : '#F7F7F7',
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontFamily: selectedFilter === option ? 'Manrope_700Bold' : 'Manrope_500Medium',
-                        fontSize: 14,
-                        color: '#3D5A4B',
-                      }}
-                    >
-                      {option}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </Box>
-            </ScrollView>
-            
-            <TouchableOpacity 
-              style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 16 }}
-              onPress={() => setShowSortDropdown(!showSortDropdown)}
-            >
-              <Text
-                style={{
-                  fontFamily: 'Manrope_500Medium',
-                  fontSize: 14,
-                  color: '#6C757D',
-                  marginRight: 4,
-                }}
-              >
-                Sort by
-              </Text>
-              <Ionicons 
-                name={showSortDropdown ? "chevron-up" : "chevron-down"} 
-                size={16} 
-                color="#6C757D" 
-              />
+              <Ionicons name="filter" size={24} color="#211115" />
             </TouchableOpacity>
           </Box>
         </Box>
@@ -255,141 +236,295 @@ export default function OrdersScreen() {
         {/* Sort Dropdown */}
         {showSortDropdown && (
           <Box
+            position="absolute"
+            top={100}
+            right={16}
+            zIndex={100}
             style={{
-              backgroundColor: '#FFFFFF',
-              marginHorizontal: 16,
-              marginTop: 8,
-              borderRadius: 8,
+              backgroundColor: 'white',
+              borderRadius: 12,
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 8,
+              minWidth: 200,
             }}
           >
-            {sortOptions.map((option, index) => (
+            {sortOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
-                onPress={() => handleSortSelect(option.value)}
+                onPress={() => {
+                  setSelectedSort(option.value);
+                  setShowSortDropdown(false);
+                }}
                 style={{
-                  padding: 16,
-                  borderBottomWidth: index < sortOptions.length - 1 ? 1 : 0,
-                  borderBottomColor: '#F7F7F7',
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottomWidth: option.value === 'therapist' ? 0 : 1,
+                  borderBottomColor: 'rgba(230, 76, 115, 0.1)',
                 }}
               >
                 <Text
                   style={{
-                    fontFamily: selectedSort === option.value ? 'Manrope_700Bold' : 'Manrope_400Regular',
+                    fontFamily: selectedSort === option.value ? 'Manrope_600SemiBold' : 'Manrope_400Regular',
                     fontSize: 14,
-                    color: selectedSort === option.value ? '#3D5A4B' : '#6C757D',
+                    color: selectedSort === option.value ? '#e64c73' : '#211115',
+                  }}
+                >
+                  {option.label}
+                </Text>
+                {selectedSort === option.value && (
+                  <Ionicons name="checkmark" size={18} color="#e64c73" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </Box>
+        )}
+
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#e64c73']}
+              tintColor="#e64c73"
+            />
+          }
+        >
+          {/* Search Bar */}
+          <Box px="$4" py="$3">
+            <Box
+              flexDirection="row"
+              alignItems="center"
+              backgroundColor="rgba(230, 76, 115, 0.1)"
+              borderRadius={12}
+              height={48}
+              px="$4"
+            >
+              <Ionicons name="search" size={20} color="rgba(230, 76, 115, 0.7)" />
+              <Input
+                flex={1}
+                size="md"
+                borderWidth={0}
+                backgroundColor="transparent"
+              >
+                <InputField
+                  placeholder="Search by order ID, service or therapist"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  style={{
+                    fontFamily: 'Manrope_400Regular',
+                    fontSize: 14,
+                    color: '#211115',
+                    marginLeft: 8,
+                  }}
+                  placeholderTextColor="rgba(230, 76, 115, 0.7)"
+                />
+              </Input>
+            </Box>
+          </Box>
+
+          {/* Filter Pills */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={{ paddingLeft: 16, marginBottom: 16 }}
+            contentContainerStyle={{ paddingRight: 16 }}
+          >
+            {filterOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => setSelectedFilter(option.value)}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 16,
+                  borderRadius: 20,
+                  backgroundColor: selectedFilter === option.value ? '#e64c73' : 'rgba(230, 76, 115, 0.1)',
+                  marginRight: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Manrope_500Medium',
+                    fontSize: 14,
+                    color: selectedFilter === option.value ? 'white' : '#e64c73',
                   }}
                 >
                   {option.label}
                 </Text>
               </TouchableOpacity>
             ))}
-          </Box>
-        )}
+          </ScrollView>
 
-        {/* Orders List */}
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          <Box p="$4" style={{ gap: 16 }}>
-            {getFilteredAndSortedOrders().map((order) => (
-              <Box
-                key={order.id}
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 12,
-                  padding: 16,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 3,
-                  elevation: 2,
-                  gap: 16,
-                }}
+          {/* Error State */}
+          {error && (
+            <Box px="$4" py="$4">
+              <Box 
+                p="$4" 
+                backgroundColor="rgba(239, 68, 68, 0.1)" 
+                borderRadius={12}
+                flexDirection="row"
+                alignItems="center"
               >
-                {/* Order Info */}
-                <Box flexDirection="row" alignItems="center" style={{ gap: 16 }}>
-                  <Image
-                    source={{ uri: order.image }}
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 8,
-                    }}
-                  />
-                  
-                  <Box flex={1}>
-                    <Text
-                      style={{
-                        fontFamily: 'Manrope_700Bold',
-                        fontSize: 18,
-                        color: '#3D5A4B',
-                        marginBottom: 4,
-                      }}
-                    >
-                      {order.serviceName}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: 'Manrope_400Regular',
-                        fontSize: 14,
-                        color: '#6C757D',
-                        marginBottom: 2,
-                      }}
-                    >
-                      Therapist: {order.therapist}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: 'Manrope_400Regular',
-                        fontSize: 14,
-                        color: '#6C757D',
-                      }}
-                    >
-                      {order.date} · {order.time}
-                    </Text>
-                  </Box>
-                  
-                  <Box alignItems="flex-end">
-                    <Text
-                      style={{
-                        fontFamily: 'Manrope_700Bold',
-                        fontSize: 14,
-                        color: getStatusColor(order.status),
-                        marginBottom: 4,
-                      }}
-                    >
-                      {order.status}
-                    </Text>
-                  </Box>
-                </Box>
+                <Ionicons name="alert-circle" size={20} color="#ef4444" />
+                <Text ml="$2" style={{ fontFamily: 'Manrope_500Medium', color: '#ef4444' }}>
+                  {error}
+                </Text>
+              </Box>
+            </Box>
+          )}
 
-                {/* Book Again Button */}
+          {/* Orders List */}
+          <Box px="$4" pb="$20">
+            {filteredOrders.length === 0 ? (
+              <Box py="$12" alignItems="center">
+                <Ionicons name="receipt-outline" size={64} color="#ccc" />
+                <Text mt="$4" style={{ fontFamily: 'Manrope_500Medium', color: '#666' }}>
+                  {orders.length === 0 ? 'No orders yet' : 'No orders match your search'}
+                </Text>
                 <TouchableOpacity
+                  onPress={() => navigation.navigate('Main')}
                   style={{
-                    width: '100%',
-                    height: 44,
-                    backgroundColor: '#F5EBEB',
+                    marginTop: 16,
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    backgroundColor: '#e64c73',
                     borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
-                  onPress={() => handleButtonPress(order)}
                 >
-                  <Text
-                    style={{
-                      fontFamily: 'Manrope_700Bold',
-                      fontSize: 16,
-                      color: '#3D5A4B',
-                    }}
-                  >
-                    {getButtonText(order.status)}
+                  <Text style={{ fontFamily: 'Manrope_600SemiBold', color: 'white' }}>
+                    Book a Service
                   </Text>
                 </TouchableOpacity>
               </Box>
-            ))}
+            ) : (
+              filteredOrders.map((order) => (
+                <TouchableOpacity
+                  key={order.id}
+                  onPress={() => handleOrderPress(order)}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    marginBottom: 16,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 8,
+                    elevation: 3,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box flexDirection="row" p="$4">
+                    {/* Therapist Avatar */}
+                    <Image
+                      source={{ uri: order.therapist_avatar || 'https://via.placeholder.com/80' }}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 12,
+                        backgroundColor: '#eee',
+                      }}
+                    />
+                    
+                    {/* Order Info */}
+                    <Box flex={1} ml="$4">
+                      <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
+                        <Box flex={1}>
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontFamily: 'Manrope_700Bold',
+                              fontSize: 16,
+                              color: '#211115',
+                            }}
+                          >
+                            {order.service_name}
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: 'Manrope_400Regular',
+                              fontSize: 14,
+                              color: '#8a7a7a',
+                              marginTop: 2,
+                            }}
+                          >
+                            with {order.therapist_name}
+                          </Text>
+                        </Box>
+                        <Box
+                          px="$3"
+                          py="$1"
+                          borderRadius={12}
+                          style={{ backgroundColor: `${getStatusColor(order.status)}20` }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: 'Manrope_600SemiBold',
+                              fontSize: 12,
+                              color: getStatusColor(order.status),
+                            }}
+                          >
+                            {getStatusLabel(order.status)}
+                          </Text>
+                        </Box>
+                      </Box>
+                      
+                      <Box flexDirection="row" alignItems="center" mt="$2">
+                        <Ionicons name="calendar-outline" size={14} color="#8a7a7a" />
+                        <Text
+                          style={{
+                            fontFamily: 'Manrope_400Regular',
+                            fontSize: 13,
+                            color: '#8a7a7a',
+                            marginLeft: 6,
+                          }}
+                        >
+                          {formatDate(order.booking_date)}
+                        </Text>
+                        <Text style={{ color: '#ccc', marginHorizontal: 8 }}>•</Text>
+                        <Ionicons name="time-outline" size={14} color="#8a7a7a" />
+                        <Text
+                          style={{
+                            fontFamily: 'Manrope_400Regular',
+                            fontSize: 13,
+                            color: '#8a7a7a',
+                            marginLeft: 6,
+                          }}
+                        >
+                          {formatTime(order.start_time)}
+                        </Text>
+                      </Box>
+
+                      <Box flexDirection="row" justifyContent="space-between" alignItems="center" mt="$2">
+                        <Text
+                          style={{
+                            fontFamily: 'Manrope_500Medium',
+                            fontSize: 12,
+                            color: '#aaa',
+                          }}
+                        >
+                          #{order.booking_no}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: 'Manrope_700Bold',
+                            fontSize: 16,
+                            color: '#e64c73',
+                          }}
+                        >
+                          ¥{order.total_price.toFixed(2)}
+                        </Text>
+                      </Box>
+                    </Box>
+                  </Box>
+                </TouchableOpacity>
+              ))
+            )}
           </Box>
         </ScrollView>
       </Box>

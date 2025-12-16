@@ -1,8 +1,14 @@
 // API 配置
 // 从环境变量读取，支持 dev/staging/prod 环境切换
 
+// 开发环境默认使用本地后端
+const DEV_API_URL = 'http://localhost:8000/api/v1';
+const PROD_API_URL = 'https://api.landa.com/api/v1';
+
 // 基础 URL（在 app.config.ts 中通过 extra 注入）
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.landa.com';
+export const API_BASE_URL = __DEV__ 
+  ? (process.env.EXPO_PUBLIC_API_URL || DEV_API_URL)
+  : (process.env.EXPO_PUBLIC_API_URL || PROD_API_URL);
 
 // 请求超时时间（毫秒）
 export const REQUEST_TIMEOUT = 15000;
@@ -30,4 +36,3 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
   GATEWAY_TIMEOUT: 504,
 };
-

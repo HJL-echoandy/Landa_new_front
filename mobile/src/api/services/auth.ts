@@ -2,39 +2,46 @@ import api from '../client';
 
 // ========== 请求/响应类型 ==========
 
-export interface SendVerificationCodeRequest {
+export interface SendCodeRequest {
   phone: string;
 }
 
-export interface SendVerificationCodeResponse {
-  success: boolean;
-  expiresIn: number; // 验证码有效期（秒）
+export interface SendCodeResponse {
+  message: string;
 }
 
-export interface LoginWithPhoneRequest {
+export interface LoginRequest {
   phone: string;
   code: string;
 }
 
-export interface LoginWithWechatRequest {
-  code: string; // 微信授权码
+export interface UserInfo {
+  id: number;
+  phone: string;
+  nickname: string | null;
+  avatar: string | null;
+  member_level: string;
+  points: number;
+  is_new_user: boolean;
 }
 
 export interface LoginResponse {
-  token: string;
-  refreshToken: string;
-  userId: string;
-  expiresIn: number;
-  isNewUser: boolean;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user: UserInfo;
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refresh_token: string;
 }
 
-export interface RefreshTokenResponse {
-  token: string;
-  expiresIn: number;
+export interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 // ========== API 调用 ==========
@@ -43,36 +50,21 @@ export const authApi = {
   /**
    * 发送验证码
    */
-  sendVerificationCode(data: SendVerificationCodeRequest): Promise<SendVerificationCodeResponse> {
+  sendCode(data: SendCodeRequest): Promise<SendCodeResponse> {
     return api.post('/auth/send-code', data, { skipAuth: true });
   },
 
   /**
    * 手机号+验证码登录
    */
-  loginWithPhone(data: LoginWithPhoneRequest): Promise<LoginResponse> {
-    return api.post('/auth/login/phone', data, { skipAuth: true });
-  },
-
-  /**
-   * 微信登录
-   */
-  loginWithWechat(data: LoginWithWechatRequest): Promise<LoginResponse> {
-    return api.post('/auth/login/wechat', data, { skipAuth: true });
+  login(data: LoginRequest): Promise<LoginResponse> {
+    return api.post('/auth/login', data, { skipAuth: true });
   },
 
   /**
    * 刷新 token
    */
-  refreshToken(data: RefreshTokenRequest): Promise<RefreshTokenResponse> {
-    return api.post('/auth/refresh-token', data, { skipAuth: true });
-  },
-
-  /**
-   * 退出登录
-   */
-  logout(): Promise<void> {
-    return api.post('/auth/logout');
+  refreshToken(data: RefreshTokenRequest): Promise<TokenResponse> {
+    return api.post('/auth/refresh', data, { skipAuth: true });
   },
 };
-

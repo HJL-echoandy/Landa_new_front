@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
-import { SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useAppNavigation } from '../navigation/hooks';
 import { Box, Button, ButtonText, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, SplineSans_300Light, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold } from '@expo-google-fonts/spline-sans';
 import { Ionicons } from '@expo/vector-icons';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../store/authSlice';
+import { setUserProfile } from '../store/userSlice';
+import { authApi } from '../api';
 
 export default function LoginScreen() {
   const navigation = useAppNavigation();
+  const dispatch = useDispatch();
+  
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   
   const [fontsLoaded] = useFonts({
     SplineSans_300Light,
@@ -26,17 +34,82 @@ export default function LoginScreen() {
     );
   }
 
-  const handleSendCode = () => {
-    if (phoneNumber.trim()) {
+  // 发送验证码
+  const handleSendCode = async () => {
+    if (!phoneNumber.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      await authApi.sendCode({ phone: phoneNumber });
       setIsCodeSent(true);
-      // 这里将来接入发送验证码 API
+      
+      // 开始倒计时 60 秒
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      Alert.alert('验证码已发送', '请查收短信验证码（开发环境可使用 888888）');
+    } catch (error: any) {
+      Alert.alert('发送失败', error.message || '请稍后重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLogin = () => {
-    if (phoneNumber.trim() && verificationCode.trim()) {
-      // 这里将来接入登录验证 API
-      navigation.navigate('Main');
+  // 登录
+  const handleLogin = async () => {
+    if (!phoneNumber.trim() || !verificationCode.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await authApi.login({
+        phone: phoneNumber,
+        code: verificationCode,
+      });
+      
+      console.log('✅ Login successful:', response);
+      console.log('🔑 Access Token:', response.access_token);
+      
+      // 保存到 Redux
+      dispatch(loginSuccess({
+        token: response.access_token,
+        refreshToken: response.refresh_token,
+        userId: String(response.user.id),
+        phoneNumber: response.user.phone,
+        loginMethod: 'phone',
+        tokenExpiry: Date.now() + response.expires_in * 1000,
+      }));
+      
+      // 保存用户信息
+      dispatch(setUserProfile({
+        id: String(response.user.id),
+        name: response.user.nickname || `用户${response.user.phone.slice(-4)}`,
+        phone: response.user.phone,
+        avatar: response.user.avatar,
+        email: null,
+        membershipLevel: response.user.member_level as 'normal' | 'silver' | 'gold' | 'platinum',
+        points: response.user.points,
+        createdAt: new Date().toISOString(),
+      }));
+      
+      // 跳转到主页
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Login failed:', error);
+      Alert.alert('登录失败', error.message || '验证码错误或已过期');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,7 +164,7 @@ export default function LoginScreen() {
                 <Button
                   size="sm"
                   onPress={handleSendCode}
-                  disabled={!phoneNumber.trim()}
+                  disabled={!phoneNumber.trim() || countdown > 0 || isLoading}
                   style={{
                     backgroundColor: isCodeSent ? '#D3B03B' : 'rgba(211, 176, 59, 0.1)',
                     borderRadius: 12,
@@ -106,7 +179,7 @@ export default function LoginScreen() {
                       fontSize: 14,
                     }}
                   >
-                    {isCodeSent ? 'Sent' : 'Send Code'}
+                    {countdown > 0 ? `${countdown}s` : (isCodeSent ? 'Resend' : 'Send Code')}
                   </ButtonText>
                 </Button>
               </Box>
@@ -128,6 +201,7 @@ export default function LoginScreen() {
                 keyboardType="number-pad"
                 value={verificationCode}
                 onChangeText={setVerificationCode}
+                maxLength={6}
                 style={{
                   fontFamily: 'SplineSans_300Light',
                   fontSize: 16,
@@ -154,7 +228,7 @@ export default function LoginScreen() {
             <Button
               size="xl"
               onPress={handleLogin}
-              disabled={!phoneNumber.trim() || !verificationCode.trim()}
+              disabled={!phoneNumber.trim() || !verificationCode.trim() || isLoading}
               style={{
                 backgroundColor: '#D3B03B',
                 borderRadius: 16,
@@ -167,15 +241,19 @@ export default function LoginScreen() {
               }}
               mt="$4"
             >
-              <ButtonText
-                style={{
-                  color: 'white',
-                  fontFamily: 'SplineSans_500Medium',
-                  fontSize: 16,
-                }}
-              >
-                Log In
-              </ButtonText>
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <ButtonText
+                  style={{
+                    color: 'white',
+                    fontFamily: 'SplineSans_500Medium',
+                    fontSize: 16,
+                  }}
+                >
+                  Log In
+                </ButtonText>
+              )}
             </Button>
 
             {/* Divider */}
@@ -191,8 +269,7 @@ export default function LoginScreen() {
             <Button
               size="xl"
               onPress={() => {
-                // 这里将来接入微信登录 SDK
-                navigation.navigate('Main');
+                Alert.alert('提示', '微信登录功能开发中...');
               }}
               style={{
                 backgroundColor: '#EAECEF',
@@ -245,5 +322,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Text,
@@ -10,22 +10,22 @@ import {
   ButtonText,
   Pressable,
 } from '@gluestack-ui/themed';
-import { SafeAreaView, StatusBar, Dimensions, ImageBackground, TouchableOpacity } from 'react-native';
+import { SafeAreaView, StatusBar, Dimensions, ImageBackground, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import { 
+  therapistsApi, 
+  TherapistDetailResponse, 
+  TherapistReviewResponse, 
+  DayAvailabilityResponse,
+  RatingDistribution,
+  TimeSlotResponse
+} from '../api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-interface Review {
-  id: string;
-  name: string;
-  avatar: string;
-  rating: number;
-  date: string;
-  comment: string;
-}
-
+// 本地接口保持兼容
 interface TimeSlot {
   time: string;
   available: boolean;
@@ -33,100 +33,28 @@ interface TimeSlot {
 }
 
 interface DayAvailability {
-  date: string; // YYYY-MM-DD
+  date: string;
   slots: TimeSlot[];
 }
-
-const therapistData = {
-  id: '1',
-  name: 'Dr. Amelia Harper',
-  title: 'Licensed Massage Therapist',
-  experience: '5 years experience',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBKOU2ux68BGS4uEnXgkIGHCLarvDDJOaXlwrx244JiUh9H7rYm4UleuIWfmegSb7kTEN4KBO9ZAmYOyxvObILdn_JFZ5vpVhwhzrWnWDkYfurfJGMis7IshTOh_l-E9KBZ6J1DTmSti3IkJoyGbVoXusscwyQmSGIRAEejeC06RQtb_fjEL0GYsP-B7JVOyaBg5pImt5TvqkpB9Sgc7gAya9gdB5NcFCkZ79FpwxB33LIrluiS0ZEtfkQ0AUOkhXyP-TC7mb-1FQ1k',
-  videoThumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-xSbCe_h4ksXPzNhKaQA3akBj1GVAjLnjU7xdNctJvvDYm-NqS-woyGkagl21f0YDp7QSaxg7KahbOmBzmo2Ltq17bPwnpuyhSqBedr8zbvRR1pgnQxeljc2VZfmWjvLLUqg8yP2mgOLwesrVO_JVcpke1iN33OuzxjSmDCPLhfqNDdFqg_4jrJD6HeWJ2507HZ316WNFfMmsJrlEZPKGb1m-WJNWrudldYoiAn9RU9KstwVQNkbCUTFdyo3uhDmQYBeCSYXsAcPS',
-  about: 'Dr. Harper is a licensed massage therapist with over 5 years of experience. She specializes in deep tissue massage, Swedish massage, and prenatal massage. Her goal is to provide a relaxing and therapeutic experience for each client.',
-  rating: 4.8,
-  totalReviews: 125,
-  price: 120,
-  ratingDistribution: {
-    5: 70,
-    4: 20,
-    3: 5,
-    2: 3,
-    1: 2,
-  },
-};
-
-const mockReviews: Review[] = [
-  {
-    id: '1',
-    name: 'Sophia Bennett',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBth-qd67r8M00LD7F5moCzoWUi4H7r0eu_FQO_RUvtF673o5J4TaTb7fVJEW40vtT8ZGQ4s5SCIkqjW75EeJYI8arbTb8V2XO3TM8PZlFh3aky5mdlOoSkGMHpQBlF_AbQ6ztAOooQP4ZBc1FHBe8CA-ijfZn1yUxmhvnVHwiZvh1mVU4OIBHkdYHTDg_YfvXxJH9aR0RxEPojwy8EF5T_eY6HJZk2rFqaq766dTc7q0WAWgxnXVx1BUOYoqv-uj4UpCiyXA08-VoN',
-    rating: 5,
-    date: '2 weeks ago',
-    comment: 'Dr. Harper is amazing! She really listened to my needs and provided a fantastic massage. I felt so relaxed and rejuvenated afterwards.',
-  },
-  {
-    id: '2',
-    name: 'Olivia Carter',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJPrarkYstF6WXLFMEHNrWetKPBWWXyRDeAMgM8sTQmF3VhJTW0bNCyCJ7BMC09DAnUYOu1GTu7mTisfBguFVUvaz4WjXoEUsBAfl3vDGu5dOBazA-fixkIacY2B8D5IEIy27EtDOOK1hl-Nf6A4PXgq1WCo4VJaqpRNcVPQgL2GJFgmTEKRf8wCfjWIXmzlnFuUeD-su5BwT2Rcz5kCAo8fRlRXfmZpZONPHRJYwEbAPHVcOEzuuoncWabrSobNgGn8KSiwyu5Ry7',
-    rating: 4,
-    date: '1 month ago',
-    comment: 'Dr. Harper was very professional and skilled. The massage was good, but the room could have been a bit warmer.',
-  },
-];
-
-// 生成未来14天的可用时段
-const generateAvailability = (): DayAvailability[] => {
-  const availability: DayAvailability[] = [];
-  const today = new Date();
-  
-  const timeSlots = [
-    '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
-  ];
-  
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    // 随机生成可用时段（模拟真实数据）
-    const slots: TimeSlot[] = timeSlots.map(time => {
-      const random = Math.random();
-      return {
-        time,
-        available: random > 0.3, // 70% 概率可用
-        booked: random < 0.15, // 15% 概率已被预约
-      };
-    });
-    
-    // 周末减少可用时段
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      slots.forEach((slot, index) => {
-        if (index < 2 || index > 5) {
-          slot.available = false;
-        }
-      });
-    }
-    
-    availability.push({ date: dateStr, slots });
-  }
-  
-  return availability;
-};
 
 export default function TherapistProfileScreen() {
   const navigation = useAppNavigation();
   const route = useAppRoute<'TherapistProfile'>();
+  const { therapistId } = route.params;
   
+  // 数据状态
+  const [therapist, setTherapist] = useState<TherapistDetailResponse | null>(null);
+  const [reviews, setReviews] = useState<TherapistReviewResponse[]>([]);
+  const [availability, setAvailability] = useState<DayAvailability[]>([]);
+  const [ratingDist, setRatingDist] = useState<RatingDistribution | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // UI 状态
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today);
   const [selectedDate, setSelectedDate] = useState<string>(today.toISOString().split('T')[0]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  
-  const availability = useMemo(() => generateAvailability(), []);
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -135,9 +63,102 @@ export default function TherapistProfileScreen() {
     Manrope_800ExtraBold,
   });
 
+  // 加载治疗师数据
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const id = parseInt(therapistId);
+      
+      // 计算日期范围（14天）
+      const startDate = today.toISOString().split('T')[0];
+      const endDate = new Date(today.getTime() + 13 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      // 并行请求
+      const [therapistData, reviewsData, availabilityData, ratingData] = await Promise.all([
+        therapistsApi.getTherapistDetail(id),
+        therapistsApi.getReviews(id, 1, 10),
+        therapistsApi.getAvailability(id, startDate, endDate),
+        therapistsApi.getRatingDistribution(id),
+      ]);
+
+      console.log('✅ Loaded therapist:', therapistData?.name);
+      
+      setTherapist(therapistData);
+      setReviews(reviewsData);
+      setAvailability(availabilityData.map(d => ({
+        date: d.date,
+        slots: d.slots.map(s => ({
+          time: s.time,
+          available: s.available,
+          booked: s.booked
+        }))
+      })));
+      setRatingDist(ratingData);
+    } catch (err: any) {
+      console.error('❌ Failed to load therapist:', err);
+      setError(err.message || '加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [therapistId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   if (!fontsLoaded) {
     return null;
   }
+
+  // 加载状态
+  if (loading) {
+    return (
+      <Box flex={1} alignItems="center" justifyContent="center" backgroundColor="#FDF7F7">
+        <ActivityIndicator size="large" color="#e64c73" />
+        <Text mt="$4" fontFamily="Manrope_500Medium" color="#666">
+          Loading...
+        </Text>
+      </Box>
+    );
+  }
+
+  // 错误状态
+  if (error || !therapist) {
+    return (
+      <Box flex={1} alignItems="center" justifyContent="center" backgroundColor="#FDF7F7" px="$6">
+        <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
+        <Text mt="$4" textAlign="center" fontFamily="Manrope_500Medium" color="#666">
+          {error || '治疗师不存在'}
+        </Text>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={{
+            marginTop: 20,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            backgroundColor: '#e64c73',
+            borderRadius: 8,
+          }}
+        >
+          <Text fontFamily="Manrope_600SemiBold" color="white">
+            返回
+          </Text>
+        </TouchableOpacity>
+      </Box>
+    );
+  }
+
+  // 计算评分分布百分比
+  const totalReviews = therapist.review_count || 1;
+  const ratingDistribution = ratingDist ? {
+    5: Math.round((ratingDist.star_5 / totalReviews) * 100),
+    4: Math.round((ratingDist.star_4 / totalReviews) * 100),
+    3: Math.round((ratingDist.star_3 / totalReviews) * 100),
+    2: Math.round((ratingDist.star_2 / totalReviews) * 100),
+    1: Math.round((ratingDist.star_1 / totalReviews) * 100),
+  } : { 5: 70, 4: 20, 3: 5, 2: 3, 1: 2 };
 
   // 获取当月日历数据
   const getCalendarData = () => {
@@ -198,24 +219,25 @@ export default function TherapistProfileScreen() {
   };
 
   const handleBookNow = () => {
-    if (!selectedTimeSlot) return;
+    if (!selectedTimeSlot || !therapist) return;
     
     navigation.navigate('Booking', {
-      therapistId: therapistData.id,
-      therapistName: therapistData.name,
-      therapistAvatar: therapistData.avatar,
-      therapistRating: therapistData.rating,
-      therapistReviews: therapistData.totalReviews,
-      therapistPrice: therapistData.price,
-      serviceName: 'Massage',
+      therapistId: String(therapist.id),
+      therapistName: therapist.name,
+      therapistAvatar: therapist.avatar || '',
+      therapistRating: therapist.rating,
+      therapistReviews: therapist.review_count,
+      therapistPrice: therapist.base_price,
+      serviceName: therapist.specialties?.[0] || 'Massage',
       serviceId: '1',
     });
   };
 
   const handleContact = () => {
+    if (!therapist) return;
     navigation.navigate('Chat', {
-      contactName: therapistData.name,
-      contactImage: therapistData.avatar,
+      contactName: therapist.name,
+      contactImage: therapist.avatar || undefined,
       contactType: 'therapist',
     });
   };
@@ -250,35 +272,57 @@ export default function TherapistProfileScreen() {
   );
 
   // Render individual review
-  const renderReview = (review: Review) => (
-    <Box key={review.id} marginBottom="$4">
-      <HStack space="md" alignItems="flex-start">
-        <Image
-          source={{ uri: review.avatar }}
-          alt={review.name}
-          width={40}
-          height={40}
-          borderRadius={20}
-        />
-        <VStack flex={1}>
-          <HStack justifyContent="space-between" alignItems="center">
-            <Text fontSize="$sm" fontFamily="Manrope_700Bold" color="#4D4141">
-              {review.name}
+  const renderReview = (review: TherapistReviewResponse) => {
+    // 格式化日期
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+      return `${Math.floor(diffDays / 365)} years ago`;
+    };
+
+    return (
+      <Box key={review.id} marginBottom="$4">
+        <HStack space="md" alignItems="flex-start">
+          <Image
+            source={{ uri: review.user_avatar || 'https://via.placeholder.com/40' }}
+            alt={review.user_nickname}
+            width={40}
+            height={40}
+            borderRadius={20}
+          />
+          <VStack flex={1}>
+            <HStack justifyContent="space-between" alignItems="center">
+              <Text fontSize="$sm" fontFamily="Manrope_700Bold" color="#4D4141">
+                {review.is_anonymous ? '匿名用户' : review.user_nickname}
+              </Text>
+              <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B">
+                {formatDate(review.created_at)}
+              </Text>
+            </HStack>
+            <HStack marginTop="$1" marginBottom="$2">
+              {renderStarRating(review.rating, 12)}
+            </HStack>
+            <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
+              {review.content || '暂无评价内容'}
             </Text>
-            <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B">
-              {review.date}
-            </Text>
-          </HStack>
-          <HStack marginTop="$1" marginBottom="$2">
-            {renderStarRating(review.rating, 12)}
-          </HStack>
-          <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
-            {review.comment}
-          </Text>
-        </VStack>
-      </HStack>
-    </Box>
-  );
+            {review.reply_content && (
+              <Box mt="$2" p="$2" backgroundColor="rgba(230, 197, 197, 0.2)" borderRadius="$md">
+                <Text fontSize="$xs" fontFamily="Manrope_500Medium" color="#4D4141">
+                  治疗师回复：{review.reply_content}
+                </Text>
+              </Box>
+            )}
+          </VStack>
+        </HStack>
+      </Box>
+    );
+  };
 
   const selectedDaySlots = getSelectedDaySlots();
   const availableSlots = selectedDaySlots.filter(s => s.available && !s.booked);
@@ -308,23 +352,23 @@ export default function TherapistProfileScreen() {
             {/* Profile Header */}
             <HStack space="md" alignItems="center">
               <Image
-                source={{ uri: therapistData.avatar }}
-                alt={therapistData.name}
+                source={{ uri: therapist.avatar || 'https://via.placeholder.com/80' }}
+                alt={therapist.name}
                 width={80}
                 height={80}
                 borderRadius={40}
               />
               <VStack flex={1}>
                 <Text fontSize="$xl" fontFamily="Manrope_800ExtraBold" color="#4D4141">
-                  {therapistData.name}
+                  {therapist.name}
                 </Text>
                 <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B">
-                  {therapistData.title}
+                  {therapist.title}
                 </Text>
                 <HStack alignItems="center" marginTop="$1">
                   <Ionicons name="star" size={14} color="#FFB800" />
                   <Text fontSize="$sm" fontFamily="Manrope_500Medium" color="#4D4141" marginLeft={4}>
-                    {therapistData.rating} ({therapistData.totalReviews} reviews)
+                    {therapist.rating.toFixed(1)} ({therapist.review_count} reviews)
                   </Text>
                 </HStack>
               </VStack>
@@ -332,34 +376,36 @@ export default function TherapistProfileScreen() {
           </Box>
 
           {/* Video Thumbnail */}
-          <Box paddingHorizontal="$4" marginBottom="$4">
-            <Pressable>
-              <Box borderRadius="$xl" overflow="hidden">
-                <ImageBackground
-                  source={{ uri: therapistData.videoThumbnail }}
-                  style={{ width: '100%', height: 180 }}
-                >
-                  <Box
-                    flex={1}
-                    alignItems="center"
-                    justifyContent="center"
-                    backgroundColor="rgba(0, 0, 0, 0.2)"
+          {therapist.video_thumbnail && (
+            <Box paddingHorizontal="$4" marginBottom="$4">
+              <Pressable>
+                <Box borderRadius="$xl" overflow="hidden">
+                  <ImageBackground
+                    source={{ uri: therapist.video_thumbnail }}
+                    style={{ width: '100%', height: 180 }}
                   >
                     <Box
-                      width={64}
-                      height={64}
-                      borderRadius={32}
-                      backgroundColor="rgba(255, 255, 255, 0.3)"
+                      flex={1}
                       alignItems="center"
                       justifyContent="center"
+                      backgroundColor="rgba(0, 0, 0, 0.2)"
                     >
-                      <Ionicons name="play" size={32} color="white" />
+                      <Box
+                        width={64}
+                        height={64}
+                        borderRadius={32}
+                        backgroundColor="rgba(255, 255, 255, 0.3)"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Ionicons name="play" size={32} color="white" />
+                      </Box>
                     </Box>
-                  </Box>
-                </ImageBackground>
-              </Box>
-            </Pressable>
-          </Box>
+                  </ImageBackground>
+                </Box>
+              </Pressable>
+            </Box>
+          )}
 
           {/* About Section */}
           <VStack paddingHorizontal="$4" marginBottom="$4">
@@ -367,7 +413,7 @@ export default function TherapistProfileScreen() {
               About
             </Text>
             <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
-              {therapistData.about}
+              {therapist.about || `${therapist.name} is a professional therapist with ${therapist.experience_years} years of experience.`}
             </Text>
           </VStack>
 
@@ -556,18 +602,18 @@ export default function TherapistProfileScreen() {
             <HStack space="lg" marginBottom="$6">
               <VStack alignItems="center">
                 <Text fontSize="$5xl" fontFamily="Manrope_700Bold" color="#4D4141">
-                  {therapistData.rating}
+                  {therapist.rating.toFixed(1)}
                 </Text>
                 <HStack space="xs" marginTop="$1">
-                  {renderStarRating(Math.floor(therapistData.rating), 18)}
+                  {renderStarRating(Math.floor(therapist.rating), 18)}
                 </HStack>
                 <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" marginTop="$1">
-                  {therapistData.totalReviews} reviews
+                  {therapist.review_count} reviews
                 </Text>
               </VStack>
               
               <VStack flex={1} space="xs">
-                {Object.entries(therapistData.ratingDistribution).reverse().map(([star, percentage]) => 
+                {Object.entries(ratingDistribution).reverse().map(([star, percentage]) => 
                   renderRatingBar(parseInt(star), percentage)
                 )}
               </VStack>
@@ -576,7 +622,16 @@ export default function TherapistProfileScreen() {
 
           {/* Individual Reviews */}
           <VStack paddingHorizontal="$4" marginBottom="$32">
-            {mockReviews.map(renderReview)}
+            {reviews.length > 0 ? (
+              reviews.map(renderReview)
+            ) : (
+              <Box py="$8" alignItems="center">
+                <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
+                <Text mt="$2" fontFamily="Manrope_400Regular" color="#A69B9B">
+                  暂无评价
+                </Text>
+              </Box>
+            )}
           </VStack>
         </ScrollView>
 

@@ -1,83 +1,130 @@
-import React from 'react';
-import { ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text } from '@gluestack-ui/themed';
-import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation } from '../navigation/hooks';
-
-const therapistsData = [
-  {
-    id: 1,
-    name: 'Dr. Anya Sharma',
-    rating: '4.9',
-    specialty: 'Deep Tissue',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0T29ZrA7bEcHbudOL3ZXKi2o9VNV5xVgkv0Rj6ur7MS_SUm6dzTL9CmWw-iz5xikRDwfWwARSKP5I8pt6iLU7HmkRPb3ThKbsxU3m_7c9KIas4lDdEmf1bfgb5PYPqG1X16kZPViGkT6zYY6mSHqq_C5PrLVUDr5tWY2jEofmJIPI-z_c_mO6nuhXsCJSfsHPKDRo0vc2zwsSiEfnf-vXTJpiSsBIcPspPEwRCpkfXyH5-11KAQhsmyRe2uvxQStzcoaZTE8iIBTe'
-  },
-  {
-    id: 2,
-    name: 'Dr. Chloe Bennett',
-    rating: '4.8',
-    specialty: 'Swedish',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCVGOh5pbfvG6-wpp4Sl5An4Hd8xafpucG2tnv7eGKE1Ndvtu_OYReDHKh0gjcdpKZ-N8J_qaqvRlUtihGQckpKvf1uvDZjPCTPHiGxgL0GvkBZtUcGf_-CLoVqPOe04lnOwNSpL88Ha45QTq5qHd367vYgc_cW068EsH7BBJPwhClsD0I_1d7l-SyNH7ihjiKODrwwhvpl0mdpQVIRLSaJZbWx0Pt0IjFm5TR-cu1eUMonqtE60QdRxibZIK7RxIxbofCubZVKtVB'
-  },
-  {
-    id: 3,
-    name: 'Dr. Olivia Chen',
-    rating: '4.7',
-    specialty: 'Aromatherapy',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmRsUpwIyeLFwYz01_XMlGZV5K98SLqskwCH_juV01quoVXmYnaX8ipbgZFxcFylLMFWs7DAw3W2IMdKeirH0lMN5VU8k7KBED8mE2yFGz7YssX3bcKqH3K9GyRYDwJQ5ATOdy1pPow3Qj_oSh5bwolqA6RQXIE9szV5iS5eoWGPXHO2lgNBvMXUIVEGodosrMm3laFbWN-CfESN0FhAkCoLbEycqVXlOHue89W6vddLR9feTDz1tvaT20hbhdiaQEh3H5q0KNmTU-'
-  }
-];
-
-const servicesData = [
-  {
-    id: 1,
-    name: 'Relaxation Massage',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCyoWSLrMHyo5N40_fO7cU_lNNt-LwnjFK3qAchrJZM5QWNOvJasYBCKtZXiRK3sI1B0NPwlEGkF02r0a7Nyu54SlLd1o_I-836e_BuX1PJtyhIxTXQ115RJWiznssve06Fm5FXqsel6k0uCyKqPxJJ-UG_vnpEj0zbsz7BFg_P5UG1OLLXr3S6CdC4-EjTiFzPfwygvKx7X09-ZNQGybT8ziJXIwQvwx4zhzr7HoxuhDtWAZt__A86zNZXPoQY4YGpiacaSsyt6v7V'
-  },
-  {
-    id: 2,
-    name: 'Deep Tissue Massage',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDBu2JGWuRDu5UrSkk6f8cvkVh1r98-1xJCTRrBodR7mSbzlsbwNspU_f-wQiOMIMQb1IXGoz4VATTqdqNfkJ32w1kRxGxQq2Rc-fKU0JuFDWpNglhA3Cw3CWWN8rdNjN_-ePiXtc2ccw0DPdz3V3cVYu8dyNaq2FQnJn9EZZbQVz5bRQFg0IkQB0DNXNCpNt5x0XRxHm9Ffl40I4JPQoZY2XmeoZP510WG2-Xnk-RAV4ILVUGDvqbE52zFLsiTkRgo68BkAK2xm9up'
-  },
-  {
-    id: 3,
-    name: 'Prenatal Massage',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBqAx37MPdw2eBNdhI-GGueK9wmeMf0l5PZ3ek5Q3KF44chgldDnk4wfZkdE01UhiAOIRGnSxNdVd7imZOZEKwi5ngAtW8lUHj0004c1qAGIdke6WMB6jqA1v7cS5K97n2jwtdd1A8ee1moORVVHPdb7GTR7k-uxAzshcOKQM5cf484qc6r-eTcptT-2kcf3hENGOf6891lz6GDjAYnd48OpenOH_1MFVOqeLrHIqU9D8ryEzHdHC3mzoYR3-tTmCvJgh2Jbkjg6j1x'
-  }
-];
+import { servicesApi, therapistsApi, ServiceListResponse, TherapistListResponse } from '../api';
 
 export default function HomeScreen() {
   const navigation = useAppNavigation();
   
+  // 数据状态
+  const [therapists, setTherapists] = useState<TherapistListResponse[]>([]);
+  const [services, setServices] = useState<ServiceListResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
+    Manrope_600SemiBold,
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+
+  // 加载数据
+  const loadData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      // 并行请求
+      const [therapistsData, servicesData] = await Promise.all([
+        therapistsApi.getTherapists({ featured: true, page_size: 10 }),
+        servicesApi.getServices({ featured: true, page_size: 6 }),
+      ]);
+
+      console.log('✅ Loaded therapists:', therapistsData.length);
+      console.log('✅ Loaded services:', servicesData.length);
+
+      setTherapists(therapistsData);
+      setServices(servicesData);
+    } catch (err: any) {
+      console.error('❌ Failed to load data:', err);
+      setError(err.message || '加载失败，请重试');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // 组件挂载时加载数据
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // 下拉刷新
+  const onRefresh = useCallback(() => {
+    loadData(true);
+  }, [loadData]);
 
   if (!fontsLoaded) {
     return null;
   }
 
-  const handleServicePress = (service: any) => {
+  const handleServicePress = (service: ServiceListResponse) => {
     console.log('Navigate to service:', service.name);
-    // 所有按摩服务都导航到 MassageServiceDetail 页面
     navigation.navigate('MassageServiceDetail', { 
       serviceId: service.id, 
       serviceName: service.name 
     });
   };
 
-  const handleTherapistPress = (therapist: any) => {
+  const handleTherapistPress = (therapist: TherapistListResponse) => {
     console.log('Navigate to therapist:', therapist.name);
-    // 跳转到治疗师详情页面
     navigation.navigate('TherapistProfile', { 
       therapistId: String(therapist.id)
     });
   };
+
+  // 加载状态
+  if (loading && therapists.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <Box flex={1} alignItems="center" justifyContent="center" style={{ backgroundColor: '#f8f6f6' }}>
+          <ActivityIndicator size="large" color="#e64c73" />
+          <Text mt="$4" style={{ fontFamily: 'Manrope_500Medium', color: '#666' }}>
+            Loading...
+          </Text>
+        </Box>
+      </SafeAreaView>
+    );
+  }
+
+  // 错误状态
+  if (error && therapists.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <Box flex={1} alignItems="center" justifyContent="center" style={{ backgroundColor: '#f8f6f6' }} px="$6">
+          <Ionicons name="cloud-offline-outline" size={64} color="#ccc" />
+          <Text mt="$4" textAlign="center" style={{ fontFamily: 'Manrope_500Medium', color: '#666' }}>
+            {error}
+          </Text>
+          <TouchableOpacity 
+            onPress={() => loadData()}
+            style={{
+              marginTop: 20,
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              backgroundColor: '#e64c73',
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ fontFamily: 'Manrope_600SemiBold', color: 'white' }}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </Box>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -114,8 +161,18 @@ export default function HomeScreen() {
           </Box>
         </Box>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Search Bar - 点击跳转到搜索页 */}
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#e64c73']}
+              tintColor="#e64c73"
+            />
+          }
+        >
+          {/* Search Bar */}
           <Box px="$4" py="$3">
             <TouchableOpacity onPress={() => navigation.navigate('SearchResults', {})}>
               <Box
@@ -154,19 +211,20 @@ export default function HomeScreen() {
             </Heading>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 16 }}>
               <Box flexDirection="row" style={{ gap: 16 }}>
-                {therapistsData.map((therapist) => (
+                {therapists.map((therapist) => (
                   <TouchableOpacity 
                     key={therapist.id} 
                     style={{ width: 128, alignItems: 'center' }}
                     onPress={() => handleTherapistPress(therapist)}
                   >
                     <Image
-                      source={{ uri: therapist.image }}
-                      style={{ width: 96, height: 96, borderRadius: 48 }}
+                      source={{ uri: therapist.avatar || 'https://via.placeholder.com/96' }}
+                      style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#eee' }}
                     />
                     <Text
                       mt="$3"
                       textAlign="center"
+                      numberOfLines={1}
                       style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 16, color: '#211115' }}
                     >
                       {therapist.name}
@@ -175,11 +233,17 @@ export default function HomeScreen() {
                       textAlign="center"
                       style={{ fontFamily: 'Manrope_400Regular', fontSize: 14, color: '#e64c73' }}
                     >
-                      {therapist.rating} · {therapist.specialty}
+                      {therapist.rating.toFixed(1)} · {therapist.specialties?.[0] || therapist.title}
                     </Text>
                   </TouchableOpacity>
                 ))}
-                <TouchableOpacity style={{ width: 128, alignItems: 'center' }}>
+                <TouchableOpacity 
+                  style={{ width: 128, alignItems: 'center' }}
+                  onPress={() => {
+                    // TODO: 跳转到治疗师列表页
+                    console.log('See more therapists');
+                  }}
+                >
                   <Box
                     style={{
                       width: 96,
@@ -216,7 +280,7 @@ export default function HomeScreen() {
             </Heading>
             <Box px="$4">
               <Box flexDirection="row" flexWrap="wrap" justifyContent="space-between">
-                {servicesData.map((service) => (
+                {services.map((service) => (
                   <TouchableOpacity
                     key={service.id}
                     style={{ width: '48%', marginBottom: 16 }}
@@ -224,16 +288,22 @@ export default function HomeScreen() {
                   >
                     <Box style={{ borderRadius: 12, overflow: 'hidden' }}>
                       <Image
-                        source={{ uri: service.image }}
-                        style={{ width: '100%', height: 120 }}
+                        source={{ uri: service.image || 'https://via.placeholder.com/200x120' }}
+                        style={{ width: '100%', height: 120, backgroundColor: '#eee' }}
                         resizeMode="cover"
                       />
                     </Box>
                     <Text
                       mt="$2"
+                      numberOfLines={1}
                       style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 16, color: '#211115' }}
                     >
                       {service.name}
+                    </Text>
+                    <Text
+                      style={{ fontFamily: 'Manrope_400Regular', fontSize: 14, color: '#e64c73' }}
+                    >
+                      ¥{service.base_price} · {service.duration}min
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -245,5 +315,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-

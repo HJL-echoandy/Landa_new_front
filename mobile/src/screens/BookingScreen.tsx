@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Text,
@@ -19,27 +19,20 @@ import {
   CloseIcon,
   Icon,
 } from '@gluestack-ui/themed';
-import { SafeAreaView, StatusBar } from 'react-native';
+import { SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppNavigation, useAppRoute } from '../navigation/hooks';
-import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import AddAddressModal, { AddressData } from '../components/AddAddressModal';
-
-interface BookingParams {
-  therapistId: string;
-  therapistName: string;
-  therapistAvatar: string;
-  therapistRating: number;
-  therapistReviews: number;
-  therapistPrice: number;
-  serviceName: string;
-  serviceId: string;
-}
+import { addressApi, therapistsApi, bookingsApi, AddressResponse, TimeSlotResponse } from '../api';
 
 interface Address {
-  id: string;
+  id: number;
   label: string;
   address: string;
+  contactName: string;
+  contactPhone: string;
+  isDefault: boolean;
   isSelected: boolean;
 }
 
@@ -53,6 +46,7 @@ export default function BookingScreen() {
   const currentMonthIndex = today.getMonth();
   const todayDate = today.getDate();
   
+  // UI 状态
   const [selectedDate, setSelectedDate] = useState(todayDate);
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex);
   const [selectedTime, setSelectedTime] = useState('');
@@ -61,33 +55,78 @@ export default function BookingScreen() {
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: '1',
-      label: 'Home',
-      address: '123 Serenity Lane, Apt 4B, Tranquil City, CA 90210',
-      isSelected: true,
-    },
-    {
-      id: '2',
-      label: 'Work',
-      address: '456 Wellness Avenue, Suite 100, Calmsville, CA 90211',
-      isSelected: false,
-    },
-    {
-      id: '3',
-      label: "Mom's House",
-      address: '789 Peace Blvd, Harmony, CA 90212',
-      isSelected: false,
-    },
-  ]);
+  
+  // 数据状态
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
+    Manrope_600SemiBold,
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+
+  // 加载数据
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // 并行加载地址和可用时段
+      const therapistId = parseInt(params?.therapistId || '1');
+      const startDate = today.toISOString().split('T')[0];
+      const endDate = new Date(today.getTime() + 13 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const [addressesData, availabilityData] = await Promise.all([
+        addressApi.getAddresses(),
+        therapistsApi.getAvailability(therapistId, startDate, endDate),
+      ]);
+
+      // 转换地址数据
+      const formattedAddresses: Address[] = addressesData.map((addr, index) => ({
+        id: addr.id,
+        label: addr.label || 'Address',
+        address: `${addr.street}, ${addr.district}, ${addr.city}`,
+        contactName: addr.contact_name,
+        contactPhone: addr.contact_phone,
+        isDefault: addr.is_default,
+        isSelected: addr.is_default || index === 0,
+      }));
+      setAddresses(formattedAddresses);
+
+      // 获取今天的可用时段
+      const todayStr = today.toISOString().split('T')[0];
+      const todayAvailability = availabilityData.find(d => d.date === todayStr);
+      if (todayAvailability) {
+        const availableSlots = todayAvailability.slots
+          .filter(s => s.available && !s.booked)
+          .map(s => s.time);
+        setTimeSlots(availableSlots.length > 0 ? availableSlots : getDefaultTimeSlots());
+      } else {
+        setTimeSlots(getDefaultTimeSlots());
+      }
+
+      console.log('✅ Loaded addresses:', formattedAddresses.length);
+    } catch (error: any) {
+      console.error('❌ Failed to load data:', error);
+      // 使用默认数据
+      setAddresses([]);
+      setTimeSlots(getDefaultTimeSlots());
+    } finally {
+      setLoading(false);
+    }
+  }, [params?.therapistId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  function getDefaultTimeSlots() {
+    return ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM'];
+  }
 
   if (!fontsLoaded) {
     return null;
@@ -105,9 +144,9 @@ export default function BookingScreen() {
   // Check if a date is available for selection (today to next 14 days)
   function isDateAvailable(year: number, month: number, day: number): boolean {
     const checkDate = new Date(year, month, day);
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // 今天的开始时间（00:00:00）
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const maxDate = new Date(todayStart);
-    maxDate.setDate(todayStart.getDate() + 14); // 14 days from today
+    maxDate.setDate(todayStart.getDate() + 14);
     
     return checkDate >= todayStart && checkDate <= maxDate;
   }
@@ -116,7 +155,7 @@ export default function BookingScreen() {
     navigation.goBack();
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     const selectedAddress = addresses.find(addr => addr.isSelected);
     const selectedMonthName = getMonthName(selectedMonth);
     
@@ -128,31 +167,33 @@ export default function BookingScreen() {
     }
     
     if (!selectedAddress) {
-      setValidationMessage('请选择地址');
+      setValidationMessage('请选择或添加地址');
       setShowValidationAlert(true);
       return;
     }
     
+    // 构建预约数据
     const bookingData = {
       service: params?.serviceName,
-      duration: '90 min', // Default duration
+      duration: '90 min',
       price: params?.therapistPrice,
-      address: selectedAddress?.address,
+      address: selectedAddress.address,
+      addressId: selectedAddress.id,
       date: `${selectedMonthName} ${selectedDate}, ${currentYear}`,
       time: selectedTime,
       therapist: params?.therapistName,
+      therapistId: params?.therapistId,
+      serviceId: params?.serviceId,
       subtotal: params?.therapistPrice,
-      discount: 20, // Example discount
+      discount: 20,
       total: (params?.therapistPrice || 0) - 20,
     };
     
     console.log('Navigating to OrderConfirmation with:', bookingData);
-    
-    // Navigate to OrderConfirmation page
     navigation.navigate('OrderConfirmation', bookingData);
   };
 
-  const handleAddressSelect = (addressId: string) => {
+  const handleAddressSelect = (addressId: number) => {
     setAddresses(prev => 
       prev.map(addr => ({
         ...addr,
@@ -162,25 +203,43 @@ export default function BookingScreen() {
   };
 
   const handleAddNewAddress = () => {
-    console.log('Add new address');
     setShowAddAddressModal(true);
   };
 
-  const handleSaveNewAddress = (addressData: AddressData) => {
-    const newAddress: Address = {
-      id: (addresses.length + 1).toString(),
-      label: 'New Address',
-      address: `${addressData.street}, ${addressData.building}`,
-      isSelected: false,
-    };
-    
-    setAddresses(prev => [...prev, newAddress]);
-    setShowAddAddressModal(false);
-    console.log('New address saved:', newAddress);
+  const handleSaveNewAddress = async (addressData: AddressData) => {
+    try {
+      const newAddress = await addressApi.createAddress({
+        label: 'New Address',
+        contact_name: '联系人',
+        contact_phone: '13800138000',
+        province: '省份',
+        city: '城市',
+        district: '区县',
+        street: `${addressData.street}, ${addressData.building}`,
+        is_default: addresses.length === 0,
+      });
+
+      const formattedAddress: Address = {
+        id: newAddress.id,
+        label: newAddress.label,
+        address: newAddress.street,
+        contactName: newAddress.contact_name,
+        contactPhone: newAddress.contact_phone,
+        isDefault: newAddress.is_default,
+        isSelected: addresses.length === 0,
+      };
+      
+      setAddresses(prev => [...prev, formattedAddress]);
+      setShowAddAddressModal(false);
+      console.log('✅ New address saved:', formattedAddress);
+    } catch (error: any) {
+      console.error('❌ Failed to save address:', error);
+      setValidationMessage('保存地址失败，请重试');
+      setShowValidationAlert(true);
+    }
   };
 
   const handlePrevMonth = () => {
-    // Only allow going back to current month if we're viewing next month
     if (displayMonthIndex > currentMonthIndex) {
       const newMonthIndex = displayMonthIndex - 1;
       setDisplayMonthIndex(newMonthIndex);
@@ -189,7 +248,6 @@ export default function BookingScreen() {
   };
 
   const handleNextMonth = () => {
-    // Check if we need to show next month (if 14 days span crosses month boundary)
     const maxDate = new Date(today);
     maxDate.setDate(today.getDate() + 14);
     
@@ -200,33 +258,19 @@ export default function BookingScreen() {
     }
   };
 
-  const timeSlots = [
-    '9:00 AM',
-    '10:00 AM', 
-    '11:00 AM',
-    '1:00 PM',
-    '2:00 PM',
-    '3:00 PM',
-  ];
-
   // Generate calendar days for display month with availability restrictions
   const generateCalendarDays = () => {
     const days = [];
     const year = currentYear;
-    const month = displayMonthIndex; // 0-based month
+    const month = displayMonthIndex;
     
-    // Get first day of month (0 = Sunday, 1 = Monday, etc.)
     const firstDay = new Date(year, month, 1).getDay();
-    
-    // Get number of days in month
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     
-    // Empty cells for days before the 1st
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
     }
     
-    // Days of the month with availability info
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         day: i,
@@ -239,6 +283,18 @@ export default function BookingScreen() {
   };
 
   const calendarDays = generateCalendarDays();
+
+  // 加载状态
+  if (loading) {
+    return (
+      <Box flex={1} alignItems="center" justifyContent="center" backgroundColor="#f8f6f7">
+        <ActivityIndicator size="large" color="#D1AEB7" />
+        <Text mt="$4" fontFamily="Manrope_500Medium" color="#666">
+          Loading...
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <Box flex={1} backgroundColor="#f8f6f7">
@@ -284,10 +340,7 @@ export default function BookingScreen() {
               {/* Calendar Header */}
               <HStack alignItems="center" justifyContent="space-between" paddingBottom="$2">
                 <Pressable onPress={handlePrevMonth} disabled={displayMonthIndex <= currentMonthIndex}>
-                  <Box
-                    padding="$2"
-                    borderRadius="$full"
-                  >
+                  <Box padding="$2" borderRadius="$full">
                     <Ionicons 
                       name="chevron-back" 
                       size={18} 
@@ -303,10 +356,7 @@ export default function BookingScreen() {
                   maxDate.setDate(today.getDate() + 14);
                   return maxDate.getMonth() <= currentMonthIndex || displayMonthIndex > currentMonthIndex;
                 })()}>
-                  <Box
-                    padding="$2"
-                    borderRadius="$full"
-                  >
+                  <Box padding="$2" borderRadius="$full">
                     <Ionicons 
                       name="chevron-forward" 
                       size={18} 
@@ -355,10 +405,10 @@ export default function BookingScreen() {
                               justifyContent="center"
                               backgroundColor={
                                 dayData.day === selectedDate && displayMonthIndex === selectedMonth
-                                  ? '#D1AEB7'  // 选中的日期：深粉色背景
+                                  ? '#D1AEB7'
                                   : dayData.isToday && (selectedDate !== dayData.day || selectedMonth !== displayMonthIndex)
-                                  ? 'rgba(209, 174, 183, 0.2)'  // 今天但未选中：浅粉色背景
-                                  : 'transparent'  // 其他日期：透明背景
+                                  ? 'rgba(209, 174, 183, 0.2)'
+                                  : 'transparent'
                               }
                               borderRadius="$full"
                               opacity={dayData.isAvailable ? 1 : 0.3}
@@ -426,46 +476,72 @@ export default function BookingScreen() {
               </Text>
               
               {/* Address Cards */}
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                <HStack space="sm">
-                  {addresses.map((address) => (
-                    <Pressable
-                      key={address.id}
-                      onPress={() => handleAddressSelect(address.id)}
-                    >
-                      <Box
-                        width={256}
-                        padding="$4"
-                        borderRadius="$lg"
-                        borderWidth={1}
-                        borderColor={address.isSelected ? '#D1AEB7' : 'rgba(153, 153, 153, 0.3)'}
-                        backgroundColor={address.isSelected ? 'rgba(209, 174, 183, 0.1)' : 'transparent'}
+              {addresses.length > 0 ? (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 16 }}
+                >
+                  <HStack space="sm">
+                    {addresses.map((address) => (
+                      <Pressable
+                        key={address.id}
+                        onPress={() => handleAddressSelect(address.id)}
                       >
-                        <Text
-                          fontSize="$sm"
-                          fontFamily="Manrope_700Bold"
-                          color={address.isSelected ? '#D1AEB7' : '#999999'}
-                          marginBottom="$1"
+                        <Box
+                          width={256}
+                          padding="$4"
+                          borderRadius="$lg"
+                          borderWidth={1}
+                          borderColor={address.isSelected ? '#D1AEB7' : 'rgba(153, 153, 153, 0.3)'}
+                          backgroundColor={address.isSelected ? 'rgba(209, 174, 183, 0.1)' : 'transparent'}
                         >
-                          {address.label}
-                        </Text>
-                        <Text
-                          fontSize="$sm"
-                          fontFamily="Manrope_400Regular"
-                          color="#1f1f1f"
-                          lineHeight="$sm"
-                        >
-                          {address.address}
-                        </Text>
-                      </Box>
-                    </Pressable>
-                  ))}
-                </HStack>
-              </ScrollView>
+                          <HStack justifyContent="space-between" alignItems="center" marginBottom="$1">
+                            <Text
+                              fontSize="$sm"
+                              fontFamily="Manrope_700Bold"
+                              color={address.isSelected ? '#D1AEB7' : '#999999'}
+                            >
+                              {address.label}
+                            </Text>
+                            {address.isDefault && (
+                              <Box px="$2" py="$0.5" backgroundColor="rgba(209, 174, 183, 0.2)" borderRadius="$sm">
+                                <Text fontSize="$2xs" fontFamily="Manrope_500Medium" color="#D1AEB7">
+                                  Default
+                                </Text>
+                              </Box>
+                            )}
+                          </HStack>
+                          <Text
+                            fontSize="$sm"
+                            fontFamily="Manrope_400Regular"
+                            color="#1f1f1f"
+                            lineHeight="$sm"
+                            numberOfLines={2}
+                          >
+                            {address.address}
+                          </Text>
+                          <Text
+                            fontSize="$xs"
+                            fontFamily="Manrope_400Regular"
+                            color="#999"
+                            marginTop="$1"
+                          >
+                            {address.contactName} · {address.contactPhone}
+                          </Text>
+                        </Box>
+                      </Pressable>
+                    ))}
+                  </HStack>
+                </ScrollView>
+              ) : (
+                <Box py="$4" alignItems="center">
+                  <Ionicons name="location-outline" size={32} color="#ccc" />
+                  <Text mt="$2" fontFamily="Manrope_400Regular" color="#999">
+                    暂无地址，请添加
+                  </Text>
+                </Box>
+              )}
               
               {/* Add New Address Button */}
               <Pressable onPress={handleAddNewAddress} marginTop="$4">
@@ -511,6 +587,7 @@ export default function BookingScreen() {
             borderRadius="$xl"
             paddingVertical="$3"
             onPress={handleConfirmBooking}
+            disabled={submitting}
             shadowColor="#D1AEB7"
             shadowOffset={{ width: 0, height: 4 }}
             shadowOpacity={0.3}
@@ -518,13 +595,17 @@ export default function BookingScreen() {
             elevation={8}
             $active-backgroundColor="#C19AA5"
           >
-            <ButtonText
-              fontSize="$md"
-              fontFamily="Manrope_700Bold"
-              color="white"
-            >
-              Book Appointment
-            </ButtonText>
+            {submitting ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <ButtonText
+                fontSize="$md"
+                fontFamily="Manrope_700Bold"
+                color="white"
+              >
+                Book Appointment
+              </ButtonText>
+            )}
           </Button>
         </Box>
 

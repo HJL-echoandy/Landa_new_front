@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, TouchableOpacity, Modal, Dimensions, ImageBackground } from 'react-native';
+import { ScrollView, TouchableOpacity, Modal, Dimensions, ImageBackground, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { 
   Box, 
   Text, 
@@ -21,12 +21,15 @@ import {
   SplineSans_600SemiBold,
   SplineSans_700Bold,
 } from '@expo-google-fonts/spline-sans';
+import { addressApi, AddressResponse } from '../api';
 
 interface Address {
   id: number;
   type: string;
   icon: string;
   address: string;
+  contactName: string;
+  contactPhone: string;
   isDefault?: boolean;
 }
 
@@ -34,10 +37,19 @@ const { height: screenHeight } = Dimensions.get('window');
 
 export default function AddressManagementScreen() {
   const navigation = useAppNavigation();
+  
+  // 数据状态
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // UI 状态
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [newAddress, setNewAddress] = useState({
+    label: '',
     street: '',
     building: '',
     contactPerson: '',
@@ -51,51 +63,120 @@ export default function AddressManagementScreen() {
     SplineSans_700Bold,
   });
 
-  if (!fontsLoaded) return null;
+  // 加载地址数据
+  const loadAddresses = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
 
-  const addresses: Address[] = [
-    {
-      id: 1,
-      type: 'Home',
-      icon: 'home',
-      address: '123 Maple Street, Apt 4B, Anytown, CA 91234',
-      isDefault: true,
-    },
-    {
-      id: 2,
-      type: 'Work',
-      icon: 'business',
-      address: '456 Oak Avenue, Suite 200, Anytown, CA 91234',
-    },
-    {
-      id: 3,
-      type: 'Vacation Home',
-      icon: 'leaf',
-      address: '789 Pine Lane, Anytown, CA 91234',
-    },
-  ];
+      const data = await addressApi.getAddresses();
+      
+      // 转换数据格式
+      const formattedAddresses: Address[] = data.map(addr => ({
+        id: addr.id,
+        type: addr.label || 'Address',
+        icon: getIconForLabel(addr.label),
+        address: `${addr.street}, ${addr.district}, ${addr.city}`,
+        contactName: addr.contact_name,
+        contactPhone: addr.contact_phone,
+        isDefault: addr.is_default,
+      }));
+      
+      setAddresses(formattedAddresses);
+      console.log('✅ Loaded addresses:', formattedAddresses.length);
+    } catch (error: any) {
+      console.error('❌ Failed to load addresses:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
+  const onRefresh = useCallback(() => {
+    loadAddresses(true);
+  }, [loadAddresses]);
+
+  function getIconForLabel(label: string | null): string {
+    switch (label?.toLowerCase()) {
+      case 'home':
+      case '家':
+        return 'home';
+      case 'work':
+      case '公司':
+        return 'business';
+      default:
+        return 'location';
+    }
+  }
+
+  if (!fontsLoaded) return null;
 
   const handleBack = () => {
     navigation.goBack();
   };
 
   const handleEditAddress = (address: Address) => {
-    console.log('Edit address:', address);
-    // Pre-fill the form with existing address data
+    const parts = address.address.split(',');
     setNewAddress({
-      street: address.address.split(',')[0]?.trim() || '',
-      building: address.address.split(',')[1]?.trim() || '',
-      contactPerson: 'John Doe', // TODO: Get from actual data
-      phoneNumber: '+1234567890', // TODO: Get from actual data
+      label: address.type,
+      street: parts[0]?.trim() || '',
+      building: parts[1]?.trim() || '',
+      contactPerson: address.contactName,
+      phoneNumber: address.contactPhone,
     });
     setIsEditing(true);
     setEditingAddress(address);
     setShowAddModal(true);
   };
 
+  const handleDeleteAddress = async (addressId: number) => {
+    Alert.alert(
+      '确认删除',
+      '确定要删除这个地址吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await addressApi.deleteAddress(addressId);
+              setAddresses(prev => prev.filter(a => a.id !== addressId));
+              console.log('✅ Deleted address:', addressId);
+            } catch (error: any) {
+              console.error('❌ Failed to delete address:', error);
+              Alert.alert('错误', '删除地址失败');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSetDefault = async (addressId: number) => {
+    try {
+      await addressApi.setDefaultAddress(addressId);
+      setAddresses(prev => prev.map(a => ({
+        ...a,
+        isDefault: a.id === addressId,
+      })));
+      console.log('✅ Set default address:', addressId);
+    } catch (error: any) {
+      console.error('❌ Failed to set default:', error);
+      Alert.alert('错误', '设置默认地址失败');
+    }
+  };
+
   const handleAddNewAddress = () => {
-    // Reset form for new address
     setNewAddress({
+      label: '',
       street: '',
       building: '',
       contactPerson: '',
@@ -112,408 +193,572 @@ export default function AddressManagementScreen() {
     setEditingAddress(null);
   };
 
-  const handleSaveAddress = () => {
-    if (isEditing && editingAddress) {
-      console.log('Update address:', editingAddress.id, newAddress);
-      // TODO: Update existing address in backend
-    } else {
-      console.log('Save new address:', newAddress);
-      // TODO: Save new address to backend
+  const handleSaveAddress = async () => {
+    // 验证必填字段
+    if (!newAddress.street.trim() || !newAddress.contactPerson.trim() || !newAddress.phoneNumber.trim()) {
+      Alert.alert('提示', '请填写完整的地址信息');
+      return;
     }
-    
-    setShowAddModal(false);
-    setIsEditing(false);
-    setEditingAddress(null);
-    
-    // Reset form
-    setNewAddress({
-      street: '',
-      building: '',
-      contactPerson: '',
-      phoneNumber: '',
-    });
+
+    setSaving(true);
+    try {
+      if (isEditing && editingAddress) {
+        // 更新地址
+        const updated = await addressApi.updateAddress(editingAddress.id, {
+          label: newAddress.label || 'Address',
+          contact_name: newAddress.contactPerson,
+          contact_phone: newAddress.phoneNumber,
+          street: `${newAddress.street}, ${newAddress.building}`,
+        });
+
+        setAddresses(prev => prev.map(a => 
+          a.id === editingAddress.id ? {
+            id: updated.id,
+            type: updated.label,
+            icon: getIconForLabel(updated.label),
+            address: updated.street,
+            contactName: updated.contact_name,
+            contactPhone: updated.contact_phone,
+            isDefault: updated.is_default,
+          } : a
+        ));
+        console.log('✅ Updated address:', updated.id);
+      } else {
+        // 创建新地址
+        const created = await addressApi.createAddress({
+          label: newAddress.label || 'Address',
+          contact_name: newAddress.contactPerson,
+          contact_phone: newAddress.phoneNumber,
+          province: '省份',
+          city: '城市',
+          district: '区县',
+          street: `${newAddress.street}, ${newAddress.building}`,
+          is_default: addresses.length === 0,
+        });
+
+        const newAddr: Address = {
+          id: created.id,
+          type: created.label,
+          icon: getIconForLabel(created.label),
+          address: created.street,
+          contactName: created.contact_name,
+          contactPhone: created.contact_phone,
+          isDefault: created.is_default,
+        };
+        setAddresses(prev => [...prev, newAddr]);
+        console.log('✅ Created address:', created.id);
+      }
+      
+      handleCloseModal();
+    } catch (error: any) {
+      console.error('❌ Failed to save address:', error);
+      Alert.alert('错误', '保存地址失败');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleZoomIn = () => {
-    console.log('Zoom in');
-  };
-
-  const handleZoomOut = () => {
-    console.log('Zoom out');
-  };
-
-  const handleCurrentLocation = () => {
-    console.log('Get current location');
-  };
+  // 加载状态
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF7F7' }}>
+        <Box flex={1} alignItems="center" justifyContent="center">
+          <ActivityIndicator size="large" color="#D4AFB9" />
+          <Text mt="$4" fontFamily="SplineSans_500Medium" color="#666">
+            Loading addresses...
+          </Text>
+        </Box>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF7F7' }}>
       {/* Header */}
       <Box
-        style={{
-          backgroundColor: 'rgba(255, 247, 247, 0.8)',
-        }}
+        backgroundColor="rgba(255, 247, 247, 0.8)"
+        paddingHorizontal="$4"
+        paddingVertical="$3"
       >
-        <HStack alignItems="center" p="$4">
-          <TouchableOpacity onPress={handleBack}>
-            <Box p="$2">
-              <Ionicons name="arrow-back" size={24} color="#3B3031" />
+        <HStack alignItems="center" justifyContent="space-between">
+          <Pressable onPress={handleBack}>
+            <Box
+              width={40}
+              height={40}
+              alignItems="center"
+              justifyContent="center"
+              borderRadius="$full"
+            >
+              <Ionicons name="arrow-back" size={24} color="#3D3538" />
             </Box>
-          </TouchableOpacity>
-          <Text 
-            flex={1}
-            textAlign="center"
+          </Pressable>
+          
+          <Text
             fontSize="$lg"
             fontFamily="SplineSans_700Bold"
-            color="#3B3031"
-            mr="$10"
+            color="#3D3538"
           >
-            Addresses
+            Address Management
           </Text>
+          
+          <Box width={40} />
         </HStack>
       </Box>
 
-      {/* Address List */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        <VStack space="md">
-          {addresses.map((address) => (
-            <Box
-              key={address.id}
-              backgroundColor="white"
-              borderRadius="$lg"
-              p="$4"
-              shadowColor="rgba(247, 209, 213, 0.3)"
-              shadowOffset={{ width: 0, height: 4 }}
-              shadowOpacity={1}
-              shadowRadius={20}
-              elevation={8}
-            >
-              <HStack alignItems="center" space="md">
-                {/* Icon */}
+      <ScrollView 
+        flex={1} 
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#D4AFB9']}
+            tintColor="#D4AFB9"
+          />
+        }
+      >
+        {/* Map Placeholder */}
+        <Box
+          height={200}
+          borderRadius="$2xl"
+          overflow="hidden"
+          marginTop="$4"
+          marginBottom="$6"
+          backgroundColor="#E8DCE2"
+        >
+          <ImageBackground
+            source={{ uri: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800' }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          >
+            <Box flex={1} backgroundColor="rgba(0,0,0,0.1)">
+              {/* Map Controls */}
+              <VStack
+                position="absolute"
+                right="$3"
+                top="$3"
+                space="sm"
+              >
+                <Pressable>
+                  <Box
+                    width={36}
+                    height={36}
+                    backgroundColor="white"
+                    borderRadius="$lg"
+                    alignItems="center"
+                    justifyContent="center"
+                    shadowColor="#000"
+                    shadowOffset={{ width: 0, height: 1 }}
+                    shadowOpacity={0.1}
+                    shadowRadius={2}
+                    elevation={2}
+                  >
+                    <Ionicons name="add" size={20} color="#3D3538" />
+                  </Box>
+                </Pressable>
+                <Pressable>
+                  <Box
+                    width={36}
+                    height={36}
+                    backgroundColor="white"
+                    borderRadius="$lg"
+                    alignItems="center"
+                    justifyContent="center"
+                    shadowColor="#000"
+                    shadowOffset={{ width: 0, height: 1 }}
+                    shadowOpacity={0.1}
+                    shadowRadius={2}
+                    elevation={2}
+                  >
+                    <Ionicons name="remove" size={20} color="#3D3538" />
+                  </Box>
+                </Pressable>
+              </VStack>
+
+              {/* Current Location Button */}
+              <Pressable
+                position="absolute"
+                right="$3"
+                bottom="$3"
+              >
                 <Box
-                  w="$12"
-                  h="$12"
+                  width={40}
+                  height={40}
+                  backgroundColor="white"
                   borderRadius="$full"
-                  backgroundColor="rgba(247, 209, 213, 0.3)"
                   alignItems="center"
                   justifyContent="center"
+                  shadowColor="#000"
+                  shadowOffset={{ width: 0, height: 1 }}
+                  shadowOpacity={0.1}
+                  shadowRadius={2}
+                  elevation={2}
                 >
-                  <Ionicons 
-                    name={address.icon as any} 
-                    size={24} 
-                    color="#E1B6B9" 
-                  />
+                  <Ionicons name="locate" size={20} color="#D4AFB9" />
                 </Box>
-
-                {/* Address Info */}
-                <Box flex={1}>
-                  <HStack alignItems="center" justifyContent="space-between" mb="$1">
-                    <Text
-                      fontSize="$md"
-                      fontFamily="SplineSans_600SemiBold"
-                      color="#3B3031"
-                    >
-                      {address.type}
-                    </Text>
-                    {address.isDefault && (
-                      <Box
-                        backgroundColor="rgba(247, 209, 213, 0.3)"
-                        borderRadius="$full"
-                        px="$3"
-                        py="$1"
-                      >
-                        <Text
-                          fontSize="$xs"
-                          fontFamily="SplineSans_500Medium"
-                          color="#E1B6B9"
-                        >
-                          Default
-                        </Text>
-                      </Box>
-                    )}
-                  </HStack>
-                  <Text
-                    fontSize="$sm"
-                    fontFamily="SplineSans_400Regular"
-                    color="#8C7D7E"
-                    numberOfLines={2}
-                  >
-                    {address.address}
-                  </Text>
-                </Box>
-
-                {/* Edit Button */}
-                <TouchableOpacity onPress={() => handleEditAddress(address)}>
-                  <Box p="$2">
-                    <Ionicons name="pencil" size={20} color="#8C7D7E" />
-                  </Box>
-                </TouchableOpacity>
-              </HStack>
+              </Pressable>
             </Box>
-          ))}
+          </ImageBackground>
+        </Box>
+
+        {/* Address List */}
+        <VStack space="md">
+          <Text
+            fontSize="$lg"
+            fontFamily="SplineSans_700Bold"
+            color="#3D3538"
+            marginBottom="$2"
+          >
+            Saved Addresses
+          </Text>
+
+          {addresses.length === 0 ? (
+            <Box py="$8" alignItems="center">
+              <Ionicons name="location-outline" size={48} color="#ccc" />
+              <Text mt="$3" fontFamily="SplineSans_400Regular" color="#999">
+                暂无保存的地址
+              </Text>
+              <Text mt="$1" fontFamily="SplineSans_400Regular" color="#999" fontSize="$sm">
+                点击下方按钮添加新地址
+              </Text>
+            </Box>
+          ) : (
+            addresses.map((address) => (
+              <Box
+                key={address.id}
+                backgroundColor="white"
+                borderRadius="$xl"
+                padding="$4"
+                shadowColor="#000"
+                shadowOffset={{ width: 0, height: 1 }}
+                shadowOpacity={0.05}
+                shadowRadius={4}
+                elevation={2}
+              >
+                <HStack alignItems="flex-start" space="md">
+                  {/* Icon */}
+                  <Box
+                    width={44}
+                    height={44}
+                    backgroundColor="rgba(212, 175, 185, 0.15)"
+                    borderRadius="$lg"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Ionicons 
+                      name={address.icon as any} 
+                      size={22} 
+                      color="#D4AFB9" 
+                    />
+                  </Box>
+
+                  {/* Address Info */}
+                  <VStack flex={1} space="xs">
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <HStack alignItems="center" space="sm">
+                        <Text
+                          fontSize="$md"
+                          fontFamily="SplineSans_600SemiBold"
+                          color="#3D3538"
+                        >
+                          {address.type}
+                        </Text>
+                        {address.isDefault && (
+                          <Box
+                            backgroundColor="rgba(212, 175, 185, 0.2)"
+                            paddingHorizontal="$2"
+                            paddingVertical="$0.5"
+                            borderRadius="$sm"
+                          >
+                            <Text
+                              fontSize="$2xs"
+                              fontFamily="SplineSans_500Medium"
+                              color="#D4AFB9"
+                            >
+                              Default
+                            </Text>
+                          </Box>
+                        )}
+                      </HStack>
+                      
+                      <HStack space="sm">
+                        {!address.isDefault && (
+                          <TouchableOpacity onPress={() => handleSetDefault(address.id)}>
+                            <Ionicons name="star-outline" size={18} color="#D4AFB9" />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={() => handleEditAddress(address)}>
+                          <Ionicons name="create-outline" size={18} color="#7A6A70" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDeleteAddress(address.id)}>
+                          <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                        </TouchableOpacity>
+                      </HStack>
+                    </HStack>
+                    
+                    <Text
+                      fontSize="$sm"
+                      fontFamily="SplineSans_400Regular"
+                      color="#7A6A70"
+                      lineHeight="$md"
+                    >
+                      {address.address}
+                    </Text>
+                    
+                    <Text
+                      fontSize="$xs"
+                      fontFamily="SplineSans_400Regular"
+                      color="#999"
+                    >
+                      {address.contactName} · {address.contactPhone}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Box>
+            ))
+          )}
         </VStack>
       </ScrollView>
 
-      {/* Add New Address Button */}
+      {/* Add Address Button */}
       <Box
-        p="$4"
-        backgroundColor="#FFF7F7"
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        backgroundColor="rgba(255, 247, 247, 0.95)"
+        paddingHorizontal="$4"
+        paddingVertical="$4"
+        borderTopWidth={1}
+        borderTopColor="rgba(232, 220, 226, 0.5)"
       >
         <Button
-          backgroundColor="#F7D1D5"
-          borderRadius="$lg"
-          h="$12"
+          height="$12"
+          borderRadius="$full"
+          backgroundColor="#D4AFB9"
           onPress={handleAddNewAddress}
-          $active-backgroundColor="#E1B6B9"
+          $active-backgroundColor="#C19CA7"
+          shadowColor="#D4AFB9"
+          shadowOffset={{ width: 0, height: 4 }}
+          shadowOpacity={0.3}
+          shadowRadius={8}
+          elevation={8}
         >
-          <ButtonText
-            fontSize="$md"
-            fontFamily="SplineSans_700Bold"
-            color="#3B3031"
-          >
-            Add New Address
-          </ButtonText>
+          <HStack alignItems="center" space="sm">
+            <Ionicons name="add" size={20} color="white" />
+            <ButtonText
+              fontSize="$md"
+              fontFamily="SplineSans_700Bold"
+              color="white"
+            >
+              Add New Address
+            </ButtonText>
+          </HStack>
         </Button>
       </Box>
 
-      {/* Add New Address Modal */}
+      {/* Add/Edit Address Modal */}
       <Modal
         visible={showAddModal}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={handleCloseModal}
       >
-        <Box
-          flex={1}
-          backgroundColor="rgba(0, 0, 0, 0.5)"
-          justifyContent="flex-end"
-        >
-          {/* Dismissible overlay area (top 20%) */}
-          <TouchableOpacity
-            style={{ flex: 0.2 }}
-            activeOpacity={1}
-            onPress={handleCloseModal}
-          />
-          
-          {/* Modal content (bottom 80%) */}
+        <Box flex={1} backgroundColor="rgba(0,0,0,0.5)" justifyContent="flex-end">
           <Box
-            height={screenHeight * 0.8}
-            backgroundColor="#f8f6f7"
-            borderTopLeftRadius="$xl"
-            borderTopRightRadius="$xl"
+            backgroundColor="white"
+            borderTopLeftRadius="$3xl"
+            borderTopRightRadius="$3xl"
+            paddingHorizontal="$6"
+            paddingTop="$6"
+            paddingBottom="$8"
+            maxHeight={screenHeight * 0.85}
           >
-
-            {/* Map Section */}
-            <Box flex={1} position="relative">
-              <ImageBackground
-                source={{
-                  uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB0zX4glVSR3MofSgAYQ_bUUlWwbml5fdh2NUjIVYXJsh7ZKGX00Y-wL5YxujUGm6mJ4p8CRKu21pqQ86j2-U8Q_ECgcywndtwugxb6LpFAw2p8FZZVdZu3xbnWatFTfQWFX2atqX3kbCb4_vAuVaTW4A-JjqcZgXBHgYyQbCn8vgz_YFNzwR19s2DS_5iCvWCt9lF1TQtvKn0Sv4lxIx_48-sV84Hiyv5ID5weH5eJj4tvN7GYwXoZDrHjgdUjEEVuYPfCmBDfU2gp'
-                }}
-                style={{ flex: 1 }}
-                resizeMode="cover"
+            {/* Modal Header */}
+            <HStack justifyContent="space-between" alignItems="center" marginBottom="$6">
+              <Text
+                fontSize="$xl"
+                fontFamily="SplineSans_700Bold"
+                color="#3D3538"
               >
-                <Box flex={1} p="$4" justifyContent="space-between">
-                  {/* Search Bar */}
-                  <Box>
-                    <HStack
-                      alignItems="center"
-                      backgroundColor="white"
-                      borderRadius="$lg"
-                      px="$4"
-                      py="$3"
-                      shadowColor="rgba(0,0,0,0.1)"
-                      shadowOffset={{ width: 0, height: 2 }}
-                      shadowOpacity={1}
-                      shadowRadius={8}
-                      elevation={3}
-                    >
-                      <Ionicons name="search" size={20} color="#955077" />
-                      <Input flex={1} borderWidth={0} backgroundColor="transparent">
-                        <InputField
-                          placeholder="Search address"
-                          fontSize="$md"
-                          fontFamily="SplineSans_400Regular"
-                          color="#1b0e15"
-                          placeholderTextColor="#955077"
-                        />
-                      </Input>
-                    </HStack>
-                  </Box>
-
-                  {/* Map Controls */}
-                  <Box alignItems="flex-end">
-                    <VStack space="sm" alignItems="flex-end">
-                      {/* Zoom Controls */}
-                      <VStack
-                        backgroundColor="rgba(245, 188, 220, 0.2)"
-                        borderRadius="$lg"
-                        shadowColor="rgba(0,0,0,0.1)"
-                        shadowOffset={{ width: 0, height: 2 }}
-                        shadowOpacity={1}
-                        shadowRadius={8}
-                        elevation={3}
-                        overflow="hidden"
-                      >
-                        <TouchableOpacity onPress={handleZoomIn}>
-                          <Box
-                            w="$10"
-                            h="$10"
-                            backgroundColor="white"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            <Ionicons name="add" size={20} color="#1b0e15" />
-                          </Box>
-                        </TouchableOpacity>
-                        <Box height={1} backgroundColor="rgba(245, 188, 220, 0.3)" />
-                        <TouchableOpacity onPress={handleZoomOut}>
-                          <Box
-                            w="$10"
-                            h="$10"
-                            backgroundColor="white"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            <Ionicons name="remove" size={20} color="#1b0e15" />
-                          </Box>
-                        </TouchableOpacity>
-                      </VStack>
-
-                      {/* Current Location Button */}
-                      <TouchableOpacity onPress={handleCurrentLocation}>
-                        <Box
-                          w="$10"
-                          h="$10"
-                          backgroundColor="white"
-                          borderRadius="$lg"
-                          alignItems="center"
-                          justifyContent="center"
-                          shadowColor="rgba(0,0,0,0.1)"
-                          shadowOffset={{ width: 0, height: 2 }}
-                          shadowOpacity={1}
-                          shadowRadius={8}
-                          elevation={3}
-                        >
-                          <Ionicons name="navigate" size={20} color="#1b0e15" />
-                        </Box>
-                      </TouchableOpacity>
-                    </VStack>
-                  </Box>
+                {isEditing ? 'Edit Address' : 'Add New Address'}
+              </Text>
+              <Pressable onPress={handleCloseModal}>
+                <Box
+                  width={32}
+                  height={32}
+                  backgroundColor="#F5F5F5"
+                  borderRadius="$full"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Ionicons name="close" size={18} color="#7A6A70" />
                 </Box>
-              </ImageBackground>
-            </Box>
+              </Pressable>
+            </HStack>
 
-            {/* Form Section */}
-            <Box
-              backgroundColor="#f8f6f7"
-              borderTopLeftRadius="$xl"
-              borderTopRightRadius="$xl"
-              p="$4"
-              mt="-$4"
-            >
-              <VStack space="md">
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <VStack space="lg">
+                {/* Label */}
+                <VStack space="xs">
+                  <Text
+                    fontSize="$sm"
+                    fontFamily="SplineSans_500Medium"
+                    color="#7A6A70"
+                  >
+                    标签 (可选)
+                  </Text>
+                  <Input
+                    backgroundColor="#F9F5F6"
+                    borderWidth={0}
+                    borderRadius="$lg"
+                    height={48}
+                  >
+                    <InputField
+                      placeholder="如: 家、公司"
+                      value={newAddress.label}
+                      onChangeText={(text) => setNewAddress(prev => ({ ...prev, label: text }))}
+                      fontFamily="SplineSans_400Regular"
+                      fontSize={14}
+                      color="#3D3538"
+                      placeholderTextColor="#B0A0A6"
+                    />
+                  </Input>
+                </VStack>
+
                 {/* Street */}
-                <Input
-                  h="$12"
-                  backgroundColor="#f3e8ee"
-                  borderRadius="$lg"
-                  borderWidth={0}
-                >
-                  <InputField
-                    placeholder="Street"
-                    value={newAddress.street}
-                    onChangeText={(text) => 
-                      setNewAddress(prev => ({ ...prev, street: text }))
-                    }
-                    fontSize="$md"
-                    fontFamily="SplineSans_400Regular"
-                    color="#1b0e15"
-                    placeholderTextColor="#955077"
-                  />
-                </Input>
+                <VStack space="xs">
+                  <Text
+                    fontSize="$sm"
+                    fontFamily="SplineSans_500Medium"
+                    color="#7A6A70"
+                  >
+                    街道地址 *
+                  </Text>
+                  <Input
+                    backgroundColor="#F9F5F6"
+                    borderWidth={0}
+                    borderRadius="$lg"
+                    height={48}
+                  >
+                    <InputField
+                      placeholder="请输入街道地址"
+                      value={newAddress.street}
+                      onChangeText={(text) => setNewAddress(prev => ({ ...prev, street: text }))}
+                      fontFamily="SplineSans_400Regular"
+                      fontSize={14}
+                      color="#3D3538"
+                      placeholderTextColor="#B0A0A6"
+                    />
+                  </Input>
+                </VStack>
 
-                {/* Building/Unit */}
-                <Input
-                  h="$12"
-                  backgroundColor="#f3e8ee"
-                  borderRadius="$lg"
-                  borderWidth={0}
-                >
-                  <InputField
-                    placeholder="Building/Unit"
-                    value={newAddress.building}
-                    onChangeText={(text) => 
-                      setNewAddress(prev => ({ ...prev, building: text }))
-                    }
-                    fontSize="$md"
-                    fontFamily="SplineSans_400Regular"
-                    color="#1b0e15"
-                    placeholderTextColor="#955077"
-                  />
-                </Input>
+                {/* Building */}
+                <VStack space="xs">
+                  <Text
+                    fontSize="$sm"
+                    fontFamily="SplineSans_500Medium"
+                    color="#7A6A70"
+                  >
+                    楼栋/门牌号
+                  </Text>
+                  <Input
+                    backgroundColor="#F9F5F6"
+                    borderWidth={0}
+                    borderRadius="$lg"
+                    height={48}
+                  >
+                    <InputField
+                      placeholder="如: 5号楼 301室"
+                      value={newAddress.building}
+                      onChangeText={(text) => setNewAddress(prev => ({ ...prev, building: text }))}
+                      fontFamily="SplineSans_400Regular"
+                      fontSize={14}
+                      color="#3D3538"
+                      placeholderTextColor="#B0A0A6"
+                    />
+                  </Input>
+                </VStack>
 
                 {/* Contact Person */}
-                <Input
-                  h="$12"
-                  backgroundColor="#f3e8ee"
-                  borderRadius="$lg"
-                  borderWidth={0}
-                >
-                  <InputField
-                    placeholder="Contact Person"
-                    value={newAddress.contactPerson}
-                    onChangeText={(text) => 
-                      setNewAddress(prev => ({ ...prev, contactPerson: text }))
-                    }
-                    fontSize="$md"
-                    fontFamily="SplineSans_400Regular"
-                    color="#1b0e15"
-                    placeholderTextColor="#955077"
-                  />
-                </Input>
+                <VStack space="xs">
+                  <Text
+                    fontSize="$sm"
+                    fontFamily="SplineSans_500Medium"
+                    color="#7A6A70"
+                  >
+                    联系人 *
+                  </Text>
+                  <Input
+                    backgroundColor="#F9F5F6"
+                    borderWidth={0}
+                    borderRadius="$lg"
+                    height={48}
+                  >
+                    <InputField
+                      placeholder="请输入联系人姓名"
+                      value={newAddress.contactPerson}
+                      onChangeText={(text) => setNewAddress(prev => ({ ...prev, contactPerson: text }))}
+                      fontFamily="SplineSans_400Regular"
+                      fontSize={14}
+                      color="#3D3538"
+                      placeholderTextColor="#B0A0A6"
+                    />
+                  </Input>
+                </VStack>
 
                 {/* Phone Number */}
-                <Input
-                  h="$12"
-                  backgroundColor="#f3e8ee"
-                  borderRadius="$lg"
-                  borderWidth={0}
-                >
-                  <InputField
-                    placeholder="Phone Number"
-                    value={newAddress.phoneNumber}
-                    onChangeText={(text) => 
-                      setNewAddress(prev => ({ ...prev, phoneNumber: text }))
-                    }
-                    fontSize="$md"
-                    fontFamily="SplineSans_400Regular"
-                    color="#1b0e15"
-                    placeholderTextColor="#955077"
-                    keyboardType="phone-pad"
-                  />
-                </Input>
+                <VStack space="xs">
+                  <Text
+                    fontSize="$sm"
+                    fontFamily="SplineSans_500Medium"
+                    color="#7A6A70"
+                  >
+                    联系电话 *
+                  </Text>
+                  <Input
+                    backgroundColor="#F9F5F6"
+                    borderWidth={0}
+                    borderRadius="$lg"
+                    height={48}
+                  >
+                    <InputField
+                      placeholder="请输入联系电话"
+                      value={newAddress.phoneNumber}
+                      onChangeText={(text) => setNewAddress(prev => ({ ...prev, phoneNumber: text }))}
+                      fontFamily="SplineSans_400Regular"
+                      fontSize={14}
+                      color="#3D3538"
+                      placeholderTextColor="#B0A0A6"
+                      keyboardType="phone-pad"
+                    />
+                  </Input>
+                </VStack>
               </VStack>
-            </Box>
+            </ScrollView>
 
             {/* Save Button */}
-            <Box p="$4" backgroundColor="#f8f6f7">
-              <Button
-                h="$12"
-                backgroundColor="#f5bcdc"
-                borderRadius="$lg"
-                onPress={handleSaveAddress}
-                $active-backgroundColor="#e1a8c8"
-              >
+            <Button
+              height="$12"
+              borderRadius="$full"
+              backgroundColor="#D4AFB9"
+              onPress={handleSaveAddress}
+              disabled={saving}
+              $active-backgroundColor="#C19CA7"
+              marginTop="$6"
+            >
+              {saving ? (
+                <ActivityIndicator color="white" />
+              ) : (
                 <ButtonText
                   fontSize="$md"
                   fontFamily="SplineSans_700Bold"
-                  color="#1b0e15"
-                  letterSpacing={0.5}
+                  color="white"
                 >
                   {isEditing ? 'Update Address' : 'Save Address'}
                 </ButtonText>
-              </Button>
-            </Box>
+              )}
+            </Button>
           </Box>
         </Box>
       </Modal>

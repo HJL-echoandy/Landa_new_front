@@ -106,17 +106,17 @@ export default function OrderConfirmationScreen() {
 
   const handleApplyCoupon = () => {
     console.log('Apply coupon');
-    // Navigate to coupon page
+    navigation.navigate('Coupons');
   };
 
   const handleRedeemPoints = () => {
     console.log('Redeem points');
-    // Navigate to points redemption
+    navigation.navigate('Points');
   };
 
   const handleRequestInvoice = () => {
     console.log('Request invoice');
-    // Handle invoice request
+    navigation.navigate('InvoiceManagement');
   };
 
   return (

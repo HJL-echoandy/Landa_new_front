@@ -1,0 +1,88 @@
+# Landa API Docker Compose
+# API + PostgreSQL + Redis
+
+version: '3.8'
+
+services:
+  # ========== API ==========
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: landa-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://postgres:landa2024@db:5432/landa
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+    volumes:
+      - ./app:/app/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - landa-network
+
+  # ========== PostgreSQL ==========
+  db:
+    image: postgres:15-alpine
+    container_name: landa-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=landa2024
+      - POSTGRES_DB=landa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    networks:
+      - landa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ========== Redis ==========
+  redis:
+    image: redis:7-alpine
+    container_name: landa-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - landa-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ========== Adminer (DB UI) ==========
+  adminer:
+    image: adminer:4
+    container_name: landa-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - landa-network
+
+networks:
+  landa-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

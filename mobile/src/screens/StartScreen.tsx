@@ -1,21 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppNavigation } from '../navigation/hooks';
-import { Box, Button, ButtonText, Heading, Text } from '@gluestack-ui/themed';
+import { Box, Text } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { ActivityIndicator } from 'react-native';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeOut } from 'react-native-reanimated';
 
 export default function StartScreen() {
   const navigation = useAppNavigation();
   const [typedTitle, setTypedTitle] = useState('');
   const [typedSubtitle, setTypedSubtitle] = useState('');
-  const [showButtons, setShowButtons] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const titleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const subtitleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const afterTypeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const navigationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -48,8 +48,14 @@ export default function StartScreen() {
           if (j >= fullSubtitle.length && subtitleTimerRef.current) {
             clearInterval(subtitleTimerRef.current);
             subtitleTimerRef.current = null;
-            // 文案完成后再显示按钮
-            afterTypeTimerRef.current = setTimeout(() => setShowButtons(true), 250);
+            // 动画完成后，短暂停顿后自动跳转到登录页
+            navigationTimerRef.current = setTimeout(() => {
+              setIsExiting(true);
+              // 淡出动画后跳转
+              setTimeout(() => {
+                navigation.replace('Login');
+              }, 500);
+            }, 800); // 停顿 0.8 秒后开始跳转
           }
         }, 50);
       }
@@ -58,9 +64,9 @@ export default function StartScreen() {
     return () => {
       if (titleTimerRef.current) clearInterval(titleTimerRef.current);
       if (subtitleTimerRef.current) clearInterval(subtitleTimerRef.current);
-      if (afterTypeTimerRef.current) clearTimeout(afterTypeTimerRef.current);
+      if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
     };
-  }, [fontsLoaded]);
+  }, [fontsLoaded, navigation]);
 
   if (!fontsLoaded) {
     return (
@@ -71,38 +77,31 @@ export default function StartScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Box flex={1} px="$6" alignItems="center" justifyContent="center" style={{ backgroundColor: '#FDFBFB' }}>
-        <Box mb="$8" alignItems="center">
-          <Text style={{ fontFamily: 'PlayfairDisplay_700Bold', fontSize: 56, lineHeight: 64, color: '#4A4A4A' }}>
-            {typedTitle}
-          </Text>
-          <Text mt="$2" size="md" style={{ opacity: 0.8, fontFamily: 'Manrope_400Regular' }}>
-            {typedSubtitle}
-          </Text>
-        </Box>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FDFBFB' }}>
+      <Animated.View 
+        style={{ flex: 1 }}
+        exiting={isExiting ? FadeOut.duration(500) : undefined}
+      >
+        <Box flex={1} px="$6" alignItems="center" justifyContent="center">
+          <Box mb="$8" alignItems="center">
+            <Text style={{ fontFamily: 'PlayfairDisplay_700Bold', fontSize: 56, lineHeight: 64, color: '#4A4A4A' }}>
+              {typedTitle}
+            </Text>
+            <Text mt="$2" size="md" style={{ opacity: 0.8, fontFamily: 'Manrope_400Regular' }}>
+              {typedSubtitle}
+            </Text>
+          </Box>
 
-        {showButtons ? (
-          <Animated.View style={{ width: '100%', maxWidth: 360 }} entering={FadeInUp.duration(800)}>
-            <Animated.View entering={FadeInUp.duration(800)}>
-              <Button size="lg" onPress={() => navigation.navigate('Login')} style={{ backgroundColor: '#D4AF37' }}>
-                <ButtonText style={{ color: '#211115', fontFamily: 'Manrope_700Bold' }}>Log In</ButtonText>
-              </Button>
-            </Animated.View>
-          </Animated.View>
-        ) : (
-          <Animated.View style={{ width: '100%', maxWidth: 360 }} entering={FadeIn.duration(1)} />
-        )}
-
-        <Box mt="$12" alignItems="center">
-          <Text size="xs" style={{ color: '#D4AF37', textDecorationLine: 'underline', opacity: 0.8 }}>
-            Learn More
-          </Text>
-          <Text mt="$2" size="2xs" style={{ color: '#D4AF37', opacity: 0.8 }}>
-            Landa Tec Co.,Ltd
-          </Text>
+          <Box mt="$12" alignItems="center">
+            <Text size="xs" style={{ color: '#D4AF37', textDecorationLine: 'underline', opacity: 0.8 }}>
+              Learn More
+            </Text>
+            <Text mt="$2" size="2xs" style={{ color: '#D4AF37', opacity: 0.8 }}>
+              Landa Tec Co.,Ltd
+            </Text>
+          </Box>
         </Box>
-      </Box>
+      </Animated.View>
     </SafeAreaView>
   );
 }
