@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold, Inter_900Black } from '@expo-google-fonts/inter';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const frequentContactsData = [
@@ -57,7 +57,7 @@ const messagesData = [
 ];
 
 export default function MessagesScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useAppNavigation();
   const [searchText, setSearchText] = useState('');
   const [messages, setMessages] = useState(messagesData);
   const [fontsLoaded] = useFonts({

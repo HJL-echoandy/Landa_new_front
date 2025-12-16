@@ -9,23 +9,13 @@ import {
   Image,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, Animated, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 
-type ServiceStartNotificationScreenRouteProp = RouteProp<{
-  ServiceStartNotification: {
-    therapistName: string;
-    therapistImage?: string;
-    serviceName: string;
-    orderId: string;
-    duration?: number;
-  };
-}, 'ServiceStartNotification'>;
-
 export default function ServiceStartNotificationScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<ServiceStartNotificationScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'ServiceStartNotification'>();
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   
   const [fontsLoaded] = useFonts({
@@ -78,7 +68,7 @@ export default function ServiceStartNotificationScreen() {
   const handleStartService = () => {
     console.log('Start service confirmed');
     // Navigate to InService screen
-    (navigation as any).navigate('InService', {
+    navigation.navigate('InService', {
       serviceName: notificationData.serviceName,
       duration: notificationData.duration || 90,
       therapistName: notificationData.therapistName,

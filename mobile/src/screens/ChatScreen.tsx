@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold, Inter_900Black } from '@expo-google-fonts/inter';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
@@ -30,8 +30,8 @@ const chatMessages = [
 ];
 
 export default function ChatScreen() {
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'Chat'>();
   const { contactName = 'Therapist Chat' } = route.params || {};
   const [messageText, setMessageText] = useState('');
   const screenWidth = Dimensions.get('window').width;

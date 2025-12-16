@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
+import { Box, Heading, Text } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 
 const therapistsData = [
   {
@@ -49,8 +49,7 @@ const servicesData = [
 ];
 
 export default function HomeScreen() {
-  const [searchText, setSearchText] = useState('');
-  const navigation = useNavigation();
+  const navigation = useAppNavigation();
   
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -66,7 +65,7 @@ export default function HomeScreen() {
   const handleServicePress = (service: any) => {
     console.log('Navigate to service:', service.name);
     // 所有按摩服务都导航到 MassageServiceDetail 页面
-    (navigation as any).navigate('MassageServiceDetail', { 
+    navigation.navigate('MassageServiceDetail', { 
       serviceId: service.id, 
       serviceName: service.name 
     });
@@ -75,8 +74,8 @@ export default function HomeScreen() {
   const handleTherapistPress = (therapist: any) => {
     console.log('Navigate to therapist:', therapist.name);
     // 跳转到治疗师详情页面
-    (navigation as any).navigate('TherapistProfile', { 
-      therapistId: therapist.id 
+    navigation.navigate('TherapistProfile', { 
+      therapistId: String(therapist.id)
     });
   };
 
@@ -116,34 +115,31 @@ export default function HomeScreen() {
         </Box>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Search Bar */}
+          {/* Search Bar - 点击跳转到搜索页 */}
           <Box px="$4" py="$3">
-            <Box position="relative">
-              <Input
-                style={{
-                  backgroundColor: 'rgba(230, 76, 115, 0.1)',
-                  borderWidth: 0,
-                  borderRadius: 12,
-                  height: 48,
-                }}
+            <TouchableOpacity onPress={() => navigation.navigate('SearchResults', {})}>
+              <Box
+                flexDirection="row"
+                alignItems="center"
+                backgroundColor="rgba(230, 76, 115, 0.1)"
+                borderRadius={12}
+                height={48}
+                px="$4"
               >
-                <InputField
-                  placeholder="Search for services or therapists"
-                  value={searchText}
-                  onChangeText={setSearchText}
+                <Ionicons name="search" size={20} color="rgba(230, 76, 115, 0.7)" />
+                <Text
                   style={{
+                    flex: 1,
+                    marginLeft: 12,
                     fontFamily: 'Manrope_400Regular',
                     fontSize: 16,
-                    color: '#211115',
-                    paddingLeft: 44,
+                    color: 'rgba(230, 76, 115, 0.7)',
                   }}
-                  placeholderTextColor="rgba(230, 76, 115, 0.7)"
-                />
-              </Input>
-              <Box position="absolute" left="$4" top="$3" bottom="$3">
-                <Ionicons name="search" size={20} color="rgba(230, 76, 115, 0.7)" />
+                >
+                  Search for services or therapists
+                </Text>
               </Box>
-            </Box>
+            </TouchableOpacity>
           </Box>
 
           {/* Featured Therapists */}

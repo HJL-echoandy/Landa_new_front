@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { Box, Button, ButtonText, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, SplineSans_300Light, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold } from '@expo-google-fonts/spline-sans';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useAppNavigation();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);

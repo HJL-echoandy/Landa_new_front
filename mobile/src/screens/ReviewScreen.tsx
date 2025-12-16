@@ -23,22 +23,13 @@ import {
   RadioLabel,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 
-type ReviewScreenRouteProp = RouteProp<{
-  Review: {
-    therapistName: string;
-    therapistImage?: string;
-    serviceName: string;
-    orderId: string;
-  };
-}, 'Review'>;
-
 export default function ReviewScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<ReviewScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'Review'>();
   const [fontsLoaded] = useFonts({
     SplineSans_400Regular,
     SplineSans_500Medium,

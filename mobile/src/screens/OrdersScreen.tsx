@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Heading, Text, Input, InputField } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 
 const ordersData = [
   {
@@ -45,7 +45,7 @@ const sortOptions = [
 ];
 
 export default function OrdersScreen() {
-  const navigation = useNavigation();
+  const navigation = useAppNavigation();
   const [searchText, setSearchText] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -122,8 +122,8 @@ export default function OrdersScreen() {
   const handleButtonPress = (order: any) => {
     if (order.status === 'Pending') {
       // Navigate to order details
-      (navigation as any).navigate('OrderDetails', {
-        orderId: order.id,
+      navigation.navigate('OrderDetails', {
+        orderId: String(order.id),
         service: order.serviceName,
         therapist: order.therapist,
         date: order.date,

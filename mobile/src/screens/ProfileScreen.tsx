@@ -10,7 +10,7 @@ import {
 } from '@gluestack-ui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { 
   useFonts,
   Manrope_400Regular,
@@ -21,7 +21,7 @@ import {
 } from '@expo-google-fonts/manrope';
 
 export default function ProfileScreen() {
-  const navigation = useNavigation();
+  const navigation = useAppNavigation();
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -35,13 +35,20 @@ export default function ProfileScreen() {
   const menuItems = [
     {
       id: 1,
+      icon: 'calendar',
+      title: 'My Appointments',
+      color: '#e64c73',
+      bgColor: 'rgba(230, 76, 115, 0.1)',
+    },
+    {
+      id: 2,
       icon: 'heart',
       title: 'My Favorites',
       color: '#ef4444',
       bgColor: 'rgba(239, 68, 68, 0.1)',
     },
     {
-      id: 2,
+      id: 3,
       icon: 'location',
       title: 'Address Management', 
       color: '#3b82f6',
@@ -51,14 +58,14 @@ export default function ProfileScreen() {
 
   const secondMenuItems = [
     {
-      id: 3,
+      id: 4,
       icon: 'receipt',
       title: 'Invoice Management',
       color: '#10b981',
       bgColor: 'rgba(16, 185, 129, 0.1)',
     },
     {
-      id: 4,
+      id: 5,
       icon: 'headset',
       title: 'Customer Service',
       color: '#8b5cf6',
@@ -75,17 +82,20 @@ export default function ProfileScreen() {
     
     // Navigate to specific pages based on menu item
     switch (item.title) {
+      case 'My Appointments':
+        navigation.navigate('Appointments');
+        break;
       case 'Address Management':
-        navigation.navigate('AddressManagement' as never);
+        navigation.navigate('AddressManagement');
         break;
       case 'My Favorites':
-        navigation.navigate('MyFavorites' as never);
+        navigation.navigate('MyFavorites');
         break;
       case 'Invoice Management':
-        // TODO: Navigate to invoice page
+        navigation.navigate('InvoiceManagement');
         break;
       case 'Customer Service':
-        // TODO: Navigate to customer service page
+        navigation.navigate('CustomerService');
         break;
       default:  
         break;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { Box, Button, ButtonText, Heading, Text } from '@gluestack-ui/themed';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
@@ -8,7 +8,7 @@ import { ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 
 export default function StartScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useAppNavigation();
   const [typedTitle, setTypedTitle] = useState('');
   const [typedSubtitle, setTypedSubtitle] = useState('');
   const [showButtons, setShowButtons] = useState(false);
@@ -85,7 +85,7 @@ export default function StartScreen() {
         {showButtons ? (
           <Animated.View style={{ width: '100%', maxWidth: 360 }} entering={FadeInUp.duration(800)}>
             <Animated.View entering={FadeInUp.duration(800)}>
-              <Button size="lg" onPress={() => navigation.navigate('Login') as any} style={{ backgroundColor: '#D4AF37' }}>
+              <Button size="lg" onPress={() => navigation.navigate('Login')} style={{ backgroundColor: '#D4AF37' }}>
                 <ButtonText style={{ color: '#211115', fontFamily: 'Manrope_700Bold' }}>Log In</ButtonText>
               </Button>
             </Animated.View>

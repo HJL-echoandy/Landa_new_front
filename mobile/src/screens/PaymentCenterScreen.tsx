@@ -26,19 +26,10 @@ import {
   Icon,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, SafeAreaView, Image } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 // import { CircleIcon } from 'lucide-react-native';
-
-type PaymentCenterScreenRouteProp = RouteProp<{
-  PaymentCenter: {
-    amount?: number;
-    orderId?: string;
-    orderDetails?: any;
-    showFailedState?: boolean;
-  };
-}, 'PaymentCenter'>;
 
 interface PaymentMethod {
   id: string;
@@ -48,8 +39,8 @@ interface PaymentMethod {
 }
 
 export default function PaymentCenterScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<PaymentCenterScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'PaymentCenter'>();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wechat');
   const [showFailedState, setShowFailedState] = useState(false);
   const [refreshCountdown, setRefreshCountdown] = useState(5);
@@ -150,22 +141,22 @@ export default function PaymentCenterScreen() {
     
     // Navigate to OrderDetails page after successful payment
     if (paymentData.orderDetails) {
-      (navigation as any).navigate('OrderDetails', {
-        orderId: paymentData.orderId,
-        service: paymentData.orderDetails.service + ' (90 min)',
-        therapist: paymentData.orderDetails.therapist,
-        date: paymentData.orderDetails.date,
-        time: paymentData.orderDetails.time,
-        address: paymentData.orderDetails.address,
+      navigation.navigate('OrderDetails', {
+        orderId: paymentData.orderId || '',
+        service: (paymentData.orderDetails.service || '') + ' (90 min)',
+        therapist: paymentData.orderDetails.therapist || '',
+        date: paymentData.orderDetails.date || '',
+        time: paymentData.orderDetails.time || '',
+        address: paymentData.orderDetails.address || '',
         status: 'Pending',
-        subtotal: paymentData.orderDetails.subtotal,
+        subtotal: paymentData.orderDetails.subtotal || 0,
         discount: paymentData.orderDetails.discount,
         pointsUsed: 0,
-        total: paymentData.orderDetails.total,
+        total: paymentData.orderDetails.total || 0,
       });
     } else {
       // Fallback to main screen
-      (navigation as any).navigate('Main');
+      navigation.navigate('Main');
     }
   };
 

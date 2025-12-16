@@ -21,7 +21,7 @@ import {
 } from '@gluestack-ui/themed';
 import { SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import AddAddressModal, { AddressData } from '../components/AddAddressModal';
 
@@ -44,9 +44,9 @@ interface Address {
 }
 
 export default function BookingScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const params = route.params as BookingParams;
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'Booking'>();
+  const params = route.params;
   
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -149,7 +149,7 @@ export default function BookingScreen() {
     console.log('Navigating to OrderConfirmation with:', bookingData);
     
     // Navigate to OrderConfirmation page
-    (navigation as any).navigate('OrderConfirmation', bookingData);
+    navigation.navigate('OrderConfirmation', bookingData);
   };
 
   const handleAddressSelect = (addressId: string) => {

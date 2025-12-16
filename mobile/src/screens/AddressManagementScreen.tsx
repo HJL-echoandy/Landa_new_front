@@ -13,7 +13,7 @@ import {
   InputField
 } from '@gluestack-ui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { 
   useFonts,
   SplineSans_400Regular,
@@ -33,7 +33,7 @@ interface Address {
 const { height: screenHeight } = Dimensions.get('window');
 
 export default function AddressManagementScreen() {
-  const navigation = useNavigation();
+  const navigation = useAppNavigation();
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);

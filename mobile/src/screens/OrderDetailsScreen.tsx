@@ -14,29 +14,13 @@ import {
   ProgressFilledTrack,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, Animated, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 
-type OrderDetailsScreenRouteProp = RouteProp<{
-  OrderDetails: {
-    orderId: string;
-    service: string;
-    therapist: string;
-    date: string;
-    time: string;
-    address: string;
-    status: 'Pending' | 'Completed' | 'Cancelled';
-    subtotal: number;
-    discount?: number;
-    pointsUsed?: number;
-    total: number;
-  };
-}, 'OrderDetails'>;
-
 export default function OrderDetailsScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<OrderDetailsScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'OrderDetails'>();
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   
   const [fontsLoaded] = useFonts({
@@ -94,7 +78,7 @@ export default function OrderDetailsScreen() {
 
   const handleContactTherapist = () => {
     console.log('Contact therapist for order:', orderData.orderId);
-    (navigation as any).navigate('Chat', {
+    navigation.navigate('Chat', {
       contactName: orderData.therapist,
       contactImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD2ozuB-1WHJJCfB62r-05Kj3sPaL-xUVesqsD3Q_pTGiPtYqoRmATpXiVb1SKLDZb5EtFasthxqbzAAK68qj8fcCLAgvqBm62m_hUDzsCK6BKmVCP4yAGsXPvigkmifp2dTIu8fi98HhM7EO2-4nwAfluKofJCv0Csg-4-EvVCO6Y7xY0PevD0IMaUEliZ1Cxcf8zNntc38WIKkP12blnlCMb_sRPjZDc4qQftO7sPBDPI7hprBQyuoJxTfwAcwcGyJ1irMSf9LjuH',
       orderId: orderData.orderId,

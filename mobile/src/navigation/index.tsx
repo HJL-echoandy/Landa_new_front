@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import type { RootStackParamList, MainTabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import StartScreen from '../screens/StartScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -21,9 +22,15 @@ import MassageServiceDetailScreen from '../screens/MassageServiceDetailScreen';
 import BookingScreen from '../screens/BookingScreen';
 import OrderConfirmationScreen from '../screens/OrderConfirmationScreen';
 import PaymentCenterScreen from '../screens/PaymentCenterScreen';
+import SearchResultsScreen from '../screens/SearchResultsScreen';
+import AppointmentsScreen from '../screens/AppointmentsScreen';
+import CouponsScreen from '../screens/CouponsScreen';
+import PointsScreen from '../screens/PointsScreen';
+import InvoiceManagementScreen from '../screens/InvoiceManagementScreen';
+import CustomerServiceScreen from '../screens/CustomerServiceScreen';
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   return (
@@ -73,6 +80,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Review" component={ReviewScreen} options={{ headerShown: false }} />
@@ -80,6 +88,11 @@ export default function RootNavigator() {
       <Stack.Screen name="ServiceStartNotification" component={ServiceStartNotificationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AddressManagement" component={AddressManagementScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MyFavorites" component={MyFavoritesScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Coupons" component={CouponsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Points" component={PointsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="InvoiceManagement" component={InvoiceManagementScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CustomerService" component={CustomerServiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TherapistProfile" component={TherapistProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MassageServiceDetail" component={MassageServiceDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Booking" component={BookingScreen} options={{ headerShown: false }} />

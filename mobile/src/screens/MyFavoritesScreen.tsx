@@ -12,7 +12,7 @@ import {
 } from '@gluestack-ui/themed';
 import { SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation } from '../navigation/hooks';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 
 interface TherapistItem {
@@ -44,7 +44,7 @@ const mockTherapists: TherapistItem[] = [
 ];
 
 export default function MyFavoritesScreen() {
-  const navigation = useNavigation();
+  const navigation = useAppNavigation();
 
   const [fontsLoaded] = useFonts({
     SplineSans_400Regular,
@@ -67,7 +67,7 @@ export default function MyFavoritesScreen() {
 
   const handleTherapistPress = (therapist: TherapistItem) => {
     console.log('Navigate to therapist profile:', therapist.name);
-    (navigation as any).navigate('TherapistProfile', { therapistId: therapist.id });
+    navigation.navigate('TherapistProfile', { therapistId: therapist.id });
   };
 
   const renderTherapistItem = (therapist: TherapistItem) => (

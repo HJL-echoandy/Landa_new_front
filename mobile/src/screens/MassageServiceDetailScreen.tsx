@@ -12,7 +12,7 @@ import {
 } from '@gluestack-ui/themed';
 import { SafeAreaView, StatusBar, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 
 interface Therapist {
@@ -97,9 +97,9 @@ const availableTherapists: Therapist[] = [
 ];
 
 export default function MassageServiceDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { serviceId } = route.params as { serviceId: number };
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'MassageServiceDetail'>();
+  const { serviceId } = route.params;
   
   // 根据传入的 serviceId 获取对应的服务数据
   const serviceData = servicesData[serviceId] || servicesData[2]; // 默认使用 Deep Tissue Massage
@@ -121,7 +121,7 @@ export default function MassageServiceDetailScreen() {
 
   const handleBookTherapist = (therapist: Therapist) => {
     console.log('Book therapist:', therapist.name);
-    (navigation as any).navigate('Booking', {
+    navigation.navigate('Booking', {
       therapistId: therapist.id,
       therapistName: therapist.name,
       therapistAvatar: therapist.avatar,

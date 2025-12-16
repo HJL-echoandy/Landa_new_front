@@ -23,29 +23,14 @@ import {
   Icon,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 // import { CheckIcon } from 'lucide-react-native';
 
-type OrderConfirmationScreenRouteProp = RouteProp<{
-  OrderConfirmation: {
-    service?: string;
-    duration?: string;
-    price?: number;
-    address?: string;
-    date?: string;
-    time?: string;
-    therapist?: string;
-    subtotal?: number;
-    discount?: number;
-    total?: number;
-  };
-}, 'OrderConfirmation'>;
-
 export default function OrderConfirmationScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<OrderConfirmationScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'OrderConfirmation'>();
   const [agreedToProtocol, setAgreedToProtocol] = useState(false);
   const [showProtocolAlert, setShowProtocolAlert] = useState(false);
   
@@ -87,7 +72,7 @@ export default function OrderConfirmationScreen() {
     console.log('Order confirmed, navigating to PaymentCenter');
     
     // Navigate to PaymentCenter with order data
-    (navigation as any).navigate('PaymentCenter', {
+    navigation.navigate('PaymentCenter', {
       amount: orderData.total || 0,
       orderId: `ORD${Date.now()}`,
       orderDetails: {

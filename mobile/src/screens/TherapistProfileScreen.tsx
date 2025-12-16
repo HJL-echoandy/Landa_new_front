@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Text,
@@ -10,9 +10,9 @@ import {
   ButtonText,
   Pressable,
 } from '@gluestack-ui/themed';
-import { SafeAreaView, StatusBar, Dimensions, ImageBackground } from 'react-native';
+import { SafeAreaView, StatusBar, Dimensions, ImageBackground, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -26,6 +26,17 @@ interface Review {
   comment: string;
 }
 
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  booked?: boolean;
+}
+
+interface DayAvailability {
+  date: string; // YYYY-MM-DD
+  slots: TimeSlot[];
+}
+
 const therapistData = {
   id: '1',
   name: 'Dr. Amelia Harper',
@@ -36,6 +47,7 @@ const therapistData = {
   about: 'Dr. Harper is a licensed massage therapist with over 5 years of experience. She specializes in deep tissue massage, Swedish massage, and prenatal massage. Her goal is to provide a relaxing and therapeutic experience for each client.',
   rating: 4.8,
   totalReviews: 125,
+  price: 120,
   ratingDistribution: {
     5: 70,
     4: 20,
@@ -64,29 +76,57 @@ const mockReviews: Review[] = [
   },
 ];
 
-// Generate calendar days for July 2024
-const generateCalendarDays = () => {
-  const days = [];
-  const startDay = 4; // July 1st starts on Thursday (0 = Sunday)
-  const daysInMonth = 30;
+// 生成未来14天的可用时段
+const generateAvailability = (): DayAvailability[] => {
+  const availability: DayAvailability[] = [];
+  const today = new Date();
   
-  // Empty cells for days before the 1st
-  for (let i = 0; i < startDay - 1; i++) {
-    days.push(null);
+  const timeSlots = [
+    '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
+  ];
+  
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // 随机生成可用时段（模拟真实数据）
+    const slots: TimeSlot[] = timeSlots.map(time => {
+      const random = Math.random();
+      return {
+        time,
+        available: random > 0.3, // 70% 概率可用
+        booked: random < 0.15, // 15% 概率已被预约
+      };
+    });
+    
+    // 周末减少可用时段
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      slots.forEach((slot, index) => {
+        if (index < 2 || index > 5) {
+          slot.available = false;
+        }
+      });
+    }
+    
+    availability.push({ date: dateStr, slots });
   }
   
-  // Days of the month
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-  
-  return days;
+  return availability;
 };
 
 export default function TherapistProfileScreen() {
-  const navigation = useNavigation();
-  const [selectedDate, setSelectedDate] = useState(5);
-  const [currentMonth, setCurrentMonth] = useState('July 2024');
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'TherapistProfile'>();
+  
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today);
+  const [selectedDate, setSelectedDate] = useState<string>(today.toISOString().split('T')[0]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  
+  const availability = useMemo(() => generateAvailability(), []);
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -99,68 +139,120 @@ export default function TherapistProfileScreen() {
     return null;
   }
 
-  const handleBack = () => {
-    navigation.goBack();
+  // 获取当月日历数据
+  const getCalendarData = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+    
+    const days: (Date | null)[] = [];
+    
+    // 前面的空白
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // 当月日期
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+    
+    return days;
   };
 
-  const handlePlayVideo = () => {
-    console.log('Play video');
-    // TODO: Open video player
+  const calendarDays = getCalendarData();
+
+  // 检查某天是否有可用时段
+  const hasAvailability = (date: Date): boolean => {
+    const dateStr = date.toISOString().split('T')[0];
+    const dayAvailability = availability.find(d => d.date === dateStr);
+    return dayAvailability ? dayAvailability.slots.some(s => s.available && !s.booked) : false;
+  };
+
+  // 检查是否是过去的日期
+  const isPastDate = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  // 获取选中日期的可用时段
+  const getSelectedDaySlots = (): TimeSlot[] => {
+    const dayAvailability = availability.find(d => d.date === selectedDate);
+    return dayAvailability?.slots || [];
+  };
+
+  // 月份导航
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(currentMonth.getMonth() + (direction === 'next' ? 1 : -1));
+    setCurrentMonth(newMonth);
+  };
+
+  const formatMonthYear = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   const handleBookNow = () => {
-    console.log('Book appointment');
-    // TODO: Navigate to booking screen
-  };
-
-  const handleContact = () => {
-    console.log('Contact therapist:', therapistData.name);
-    // 跳转到聊天页面，传递治疗师信息
-    (navigation as any).navigate('Chat', {
-      contactId: therapistData.id,
-      contactName: therapistData.name,
-      contactAvatar: therapistData.avatar,
-      contactType: 'therapist'
+    if (!selectedTimeSlot) return;
+    
+    navigation.navigate('Booking', {
+      therapistId: therapistData.id,
+      therapistName: therapistData.name,
+      therapistAvatar: therapistData.avatar,
+      therapistRating: therapistData.rating,
+      therapistReviews: therapistData.totalReviews,
+      therapistPrice: therapistData.price,
+      serviceName: 'Massage',
+      serviceId: '1',
     });
   };
 
-  const renderStarRating = (rating: number, size: number = 20) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Ionicons
-          key={i}
-          name={i <= rating ? 'star' : 'star-outline'}
-          size={size}
-          color="#E6C5C5"
-        />
-      );
-    }
-    return stars;
+  const handleContact = () => {
+    navigation.navigate('Chat', {
+      contactName: therapistData.name,
+      contactImage: therapistData.avatar,
+      contactType: 'therapist',
+    });
   };
 
-  const renderRatingBar = (starCount: number, percentage: number) => (
-    <HStack alignItems="center" space="sm" marginBottom="$1">
-      <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#4D4141" width={12}>
-        {starCount}
+  // Render star rating
+  const renderStarRating = (rating: number, size: number = 14) => {
+    return Array.from({ length: 5 }, (_, index) => (
+      <Ionicons
+        key={index}
+        name={index < rating ? 'star' : 'star-outline'}
+        size={size}
+        color={index < rating ? '#FFB800' : '#D9D9D9'}
+      />
+    ));
+  };
+
+  // Render rating distribution bar
+  const renderRatingBar = (star: number, percentage: number) => (
+    <HStack key={star} alignItems="center" space="xs">
+      <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B" width={8}>
+        {star}
       </Text>
-      <Box flex={1} height={6} backgroundColor="rgba(230, 197, 197, 0.2)" borderRadius="$full">
+      <Box flex={1} height={6} backgroundColor="rgba(230, 197, 197, 0.3)" borderRadius="$full">
         <Box
-          height={6}
+          width={`${percentage}%`}
+          height="100%"
           backgroundColor="#E6C5C5"
           borderRadius="$full"
-          width={`${percentage}%`}
         />
       </Box>
-      <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" width={32} textAlign="right">
-        {percentage}%
-      </Text>
     </HStack>
   );
 
+  // Render individual review
   const renderReview = (review: Review) => (
-    <VStack key={review.id} space="sm" marginBottom="$6">
-      <HStack alignItems="center" space="sm">
+    <Box key={review.id} marginBottom="$4">
+      <HStack space="md" alignItems="flex-start">
         <Image
           source={{ uri: review.avatar }}
           alt={review.name}
@@ -169,111 +261,89 @@ export default function TherapistProfileScreen() {
           borderRadius={20}
         />
         <VStack flex={1}>
-          <Text fontSize="$md" fontFamily="Manrope_500Medium" color="#4D4141">
-            {review.name}
-          </Text>
-          <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B">
-            {review.date}
+          <HStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$sm" fontFamily="Manrope_700Bold" color="#4D4141">
+              {review.name}
+            </Text>
+            <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B">
+              {review.date}
+            </Text>
+          </HStack>
+          <HStack marginTop="$1" marginBottom="$2">
+            {renderStarRating(review.rating, 12)}
+          </HStack>
+          <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
+            {review.comment}
           </Text>
         </VStack>
       </HStack>
-      
-      <HStack space="xs">
-        {renderStarRating(review.rating)}
-      </HStack>
-      
-      <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
-        {review.comment}
-      </Text>
-    </VStack>
+    </Box>
   );
 
-  const calendarDays = generateCalendarDays();
+  const selectedDaySlots = getSelectedDaySlots();
+  const availableSlots = selectedDaySlots.filter(s => s.available && !s.booked);
 
   return (
     <Box flex={1} backgroundColor="#FDF7F7">
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FDF7F7" />
-        
-        {/* Header */}
-        <Box
-          backgroundColor="rgba(253, 247, 247, 0.8)"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          zIndex={10}
-        >
-          <HStack alignItems="center">
-            <Pressable onPress={handleBack}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Header with Avatar */}
+          <Box paddingHorizontal="$4" paddingTop="$2" marginBottom="$4">
+            {/* Back Button */}
+            <Pressable onPress={() => navigation.goBack()}>
               <Box
-                padding="$2"
-                borderRadius="$full"
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor="rgba(230, 197, 197, 0.3)"
+                alignItems="center"
+                justifyContent="center"
+                marginBottom="$4"
               >
-                <Ionicons name="arrow-back" size={24} color="#4D4141" />
+                <Ionicons name="arrow-back" size={20} color="#4D4141" />
               </Box>
             </Pressable>
             
-            <Text
-              flex={1}
-              fontSize="$lg"
-              fontFamily="Manrope_700Bold"
-              color="#4D4141"
-              textAlign="center"
-              paddingRight="$10"
-            >
-              Therapist Profile
-            </Text>
-          </HStack>
-        </Box>
+            {/* Profile Header */}
+            <HStack space="md" alignItems="center">
+              <Image
+                source={{ uri: therapistData.avatar }}
+                alt={therapistData.name}
+                width={80}
+                height={80}
+                borderRadius={40}
+              />
+              <VStack flex={1}>
+                <Text fontSize="$xl" fontFamily="Manrope_800ExtraBold" color="#4D4141">
+                  {therapistData.name}
+                </Text>
+                <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B">
+                  {therapistData.title}
+                </Text>
+                <HStack alignItems="center" marginTop="$1">
+                  <Ionicons name="star" size={14} color="#FFB800" />
+                  <Text fontSize="$sm" fontFamily="Manrope_500Medium" color="#4D4141" marginLeft={4}>
+                    {therapistData.rating} ({therapistData.totalReviews} reviews)
+                  </Text>
+                </HStack>
+              </VStack>
+            </HStack>
+          </Box>
 
-        <ScrollView flex={1} paddingTop={60} paddingBottom={100} showsVerticalScrollIndicator={false}>
-          {/* Therapist Info */}
-          <VStack alignItems="center" paddingHorizontal="$4" paddingVertical="$4">
-            <Image
-              source={{ uri: therapistData.avatar }}
-              alt={therapistData.name}
-              width={128}
-              height={128}
-              borderRadius={64}
-              marginBottom="$4"
-            />
-            <Text fontSize="$2xl" fontFamily="Manrope_700Bold" color="#4D4141" textAlign="center">
-              {therapistData.name}
-            </Text>
-            <Text fontSize="$md" fontFamily="Manrope_400Regular" color="#A69B9B" textAlign="center">
-              {therapistData.title}
-            </Text>
-            <Text fontSize="$md" fontFamily="Manrope_400Regular" color="#A69B9B" textAlign="center">
-              {therapistData.experience}
-            </Text>
-          </VStack>
-
-          {/* Video Section */}
+          {/* Video Thumbnail */}
           <Box paddingHorizontal="$4" marginBottom="$4">
-            <Pressable onPress={handlePlayVideo}>
-              <Box
-                height={200}
-                borderRadius="$xl"
-                overflow="hidden"
-                position="relative"
-              >
+            <Pressable>
+              <Box borderRadius="$xl" overflow="hidden">
                 <ImageBackground
                   source={{ uri: therapistData.videoThumbnail }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
+                  style={{ width: '100%', height: 180 }}
                 >
                   <Box
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    right={0}
-                    bottom={0}
-                    backgroundColor="rgba(0, 0, 0, 0.3)"
+                    flex={1}
                     alignItems="center"
                     justifyContent="center"
+                    backgroundColor="rgba(0, 0, 0, 0.2)"
                   >
                     <Box
                       width={64}
@@ -299,6 +369,178 @@ export default function TherapistProfileScreen() {
             <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" lineHeight="$lg">
               {therapistData.about}
             </Text>
+          </VStack>
+
+          {/* Divider */}
+          <Box height={1} backgroundColor="rgba(230, 197, 197, 0.2)" marginHorizontal="$4" marginVertical="$4" />
+
+          {/* Availability Calendar */}
+          <VStack paddingHorizontal="$4" marginBottom="$4">
+            <Text fontSize="$lg" fontFamily="Manrope_700Bold" color="#4D4141" marginBottom="$4">
+              Availability
+            </Text>
+            
+            <Box backgroundColor="white" padding="$4" borderRadius="$lg">
+              {/* Calendar Header */}
+              <HStack alignItems="center" justifyContent="space-between" marginBottom="$4">
+                <Pressable onPress={() => navigateMonth('prev')}>
+                  <Box padding="$2" borderRadius="$full">
+                    <Ionicons name="chevron-back" size={20} color="#4D4141" />
+                  </Box>
+                </Pressable>
+                <Text fontSize="$md" fontFamily="Manrope_700Bold" color="#4D4141">
+                  {formatMonthYear(currentMonth)}
+                </Text>
+                <Pressable onPress={() => navigateMonth('next')}>
+                  <Box padding="$2" borderRadius="$full">
+                    <Ionicons name="chevron-forward" size={20} color="#4D4141" />
+                  </Box>
+                </Pressable>
+              </HStack>
+              
+              {/* Calendar Grid */}
+              <VStack space="xs">
+                {/* Weekday Headers */}
+                <HStack justifyContent="space-between">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                    <Box key={index} width={40} height={40} alignItems="center" justifyContent="center">
+                      <Text fontSize="$sm" fontFamily="Manrope_700Bold" color="#A69B9B">
+                        {day}
+                      </Text>
+                    </Box>
+                  ))}
+                </HStack>
+                
+                {/* Calendar Days */}
+                {Array.from({ length: Math.ceil(calendarDays.length / 7) }, (_, weekIndex) => (
+                  <HStack key={weekIndex} justifyContent="space-between">
+                    {calendarDays.slice(weekIndex * 7, (weekIndex + 1) * 7).map((day, dayIndex) => {
+                      if (!day) {
+                        return <Box key={dayIndex} width={40} height={40} />;
+                      }
+                      
+                      const dateStr = day.toISOString().split('T')[0];
+                      const isSelected = dateStr === selectedDate;
+                      const isPast = isPastDate(day);
+                      const hasSlots = hasAvailability(day);
+                      const isToday = dateStr === today.toISOString().split('T')[0];
+                      
+                      return (
+                        <Pressable
+                          key={dayIndex}
+                          onPress={() => !isPast && setSelectedDate(dateStr)}
+                          disabled={isPast}
+                        >
+                          <Box
+                            width={40}
+                            height={40}
+                            alignItems="center"
+                            justifyContent="center"
+                            backgroundColor={isSelected ? '#E6C5C5' : 'transparent'}
+                            borderRadius="$full"
+                            borderWidth={isToday && !isSelected ? 1 : 0}
+                            borderColor="#E6C5C5"
+                            opacity={isPast ? 0.3 : 1}
+                          >
+                            <Text
+                              fontSize="$sm"
+                              fontFamily="Manrope_500Medium"
+                              color={isSelected ? '#4D4141' : isPast ? '#A69B9B' : '#4D4141'}
+                            >
+                              {day.getDate()}
+                            </Text>
+                            {/* 可用性指示点 */}
+                            {!isPast && hasSlots && !isSelected && (
+                              <Box
+                                position="absolute"
+                                bottom={4}
+                                width={4}
+                                height={4}
+                                borderRadius={2}
+                                backgroundColor="#10b981"
+                              />
+                            )}
+                          </Box>
+                        </Pressable>
+                      );
+                    })}
+                  </HStack>
+                ))}
+              </VStack>
+              
+              {/* Legend */}
+              <HStack space="md" marginTop="$4" justifyContent="center">
+                <HStack alignItems="center" space="xs">
+                  <Box width={8} height={8} borderRadius={4} backgroundColor="#10b981" />
+                  <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B">Available</Text>
+                </HStack>
+                <HStack alignItems="center" space="xs">
+                  <Box width={8} height={8} borderRadius={4} backgroundColor="#E6C5C5" />
+                  <Text fontSize="$xs" fontFamily="Manrope_400Regular" color="#A69B9B">Selected</Text>
+                </HStack>
+              </HStack>
+            </Box>
+            
+            {/* Time Slots for Selected Date */}
+            <Box marginTop="$4">
+              <Text fontSize="$md" fontFamily="Manrope_600SemiBold" color="#4D4141" marginBottom="$3">
+                Available times on {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              </Text>
+              
+              {availableSlots.length > 0 ? (
+                <HStack flexWrap="wrap" style={{ gap: 8 }}>
+                  {selectedDaySlots.map((slot, index) => {
+                    const isAvailable = slot.available && !slot.booked;
+                    const isSelectedSlot = selectedTimeSlot === slot.time;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => isAvailable && setSelectedTimeSlot(slot.time)}
+                        disabled={!isAvailable}
+                      >
+                        <Box
+                          paddingHorizontal="$4"
+                          paddingVertical="$2"
+                          borderRadius={8}
+                          borderWidth={1}
+                          backgroundColor={
+                            isSelectedSlot ? '#E6C5C5' : 
+                            !isAvailable ? 'rgba(0,0,0,0.05)' : 'white'
+                          }
+                          borderColor={
+                            isSelectedSlot ? '#E6C5C5' : 
+                            !isAvailable ? 'rgba(0,0,0,0.1)' : 'rgba(230, 197, 197, 0.5)'
+                          }
+                          opacity={!isAvailable ? 0.5 : 1}
+                        >
+                          <Text
+                            fontSize="$sm"
+                            fontFamily={isSelectedSlot ? 'Manrope_600SemiBold' : 'Manrope_400Regular'}
+                            color={!isAvailable ? '#A69B9B' : '#4D4141'}
+                            style={!isAvailable ? { textDecorationLine: 'line-through' } : undefined}
+                          >
+                            {slot.time}
+                          </Text>
+                        </Box>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </HStack>
+              ) : (
+                <Box 
+                  backgroundColor="rgba(230, 197, 197, 0.1)" 
+                  borderRadius={8} 
+                  padding="$4"
+                  alignItems="center"
+                >
+                  <Ionicons name="calendar-outline" size={32} color="#A69B9B" />
+                  <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B" marginTop="$2" textAlign="center">
+                    No available time slots on this date.{'\n'}Please select another date.
+                  </Text>
+                </Box>
+              )}
+            </Box>
           </VStack>
 
           {/* Divider */}
@@ -333,83 +575,8 @@ export default function TherapistProfileScreen() {
           </VStack>
 
           {/* Individual Reviews */}
-          <VStack paddingHorizontal="$4" marginBottom="$6">
+          <VStack paddingHorizontal="$4" marginBottom="$32">
             {mockReviews.map(renderReview)}
-          </VStack>
-
-          {/* Divider */}
-          <Box height={1} backgroundColor="rgba(230, 197, 197, 0.2)" marginHorizontal="$4" marginVertical="$4" />
-
-          {/* Availability Calendar */}
-          <VStack paddingHorizontal="$4" marginBottom="$4">
-            <Text fontSize="$lg" fontFamily="Manrope_700Bold" color="#4D4141" marginBottom="$4">
-              Availability
-            </Text>
-            
-            <Box backgroundColor="white" padding="$4" borderRadius="$lg">
-              {/* Calendar Header */}
-              <HStack alignItems="center" justifyContent="space-between" marginBottom="$4">
-                <Pressable>
-                  <Box padding="$2" borderRadius="$full">
-                    <Ionicons name="chevron-back" size={20} color="#4D4141" />
-                  </Box>
-                </Pressable>
-                <Text fontSize="$md" fontFamily="Manrope_700Bold" color="#4D4141">
-                  {currentMonth}
-                </Text>
-                <Pressable>
-                  <Box padding="$2" borderRadius="$full">
-                    <Ionicons name="chevron-forward" size={20} color="#4D4141" />
-                  </Box>
-                </Pressable>
-              </HStack>
-              
-              {/* Calendar Grid */}
-              <VStack space="xs">
-                {/* Weekday Headers */}
-                <HStack justifyContent="space-between">
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                    <Box key={index} width={40} height={40} alignItems="center" justifyContent="center">
-                      <Text fontSize="$sm" fontFamily="Manrope_700Bold" color="#A69B9B">
-                        {day}
-                      </Text>
-                    </Box>
-                  ))}
-                </HStack>
-                
-                {/* Calendar Days */}
-                {Array.from({ length: Math.ceil(calendarDays.length / 7) }, (_, weekIndex) => (
-                  <HStack key={weekIndex} justifyContent="space-between">
-                    {calendarDays.slice(weekIndex * 7, (weekIndex + 1) * 7).map((day, dayIndex) => (
-                      <Pressable
-                        key={dayIndex}
-                        onPress={() => day && setSelectedDate(day)}
-                        disabled={!day}
-                      >
-                        <Box
-                          width={40}
-                          height={40}
-                          alignItems="center"
-                          justifyContent="center"
-                          backgroundColor={day === selectedDate ? '#E6C5C5' : 'transparent'}
-                          borderRadius="$full"
-                        >
-                          {day && (
-                            <Text
-                              fontSize="$sm"
-                              fontFamily="Manrope_500Medium"
-                              color={day === selectedDate ? '#4D4141' : '#4D4141'}
-                            >
-                              {day}
-                            </Text>
-                          )}
-                        </Box>
-                      </Pressable>
-                    ))}
-                  </HStack>
-                ))}
-              </VStack>
-            </Box>
           </VStack>
         </ScrollView>
 
@@ -419,26 +586,39 @@ export default function TherapistProfileScreen() {
           bottom={0}
           left={0}
           right={0}
-          backgroundColor="rgba(253, 247, 247, 0.8)"
+          backgroundColor="rgba(253, 247, 247, 0.95)"
           padding="$4"
           borderTopWidth={1}
           borderTopColor="rgba(230, 197, 197, 0.2)"
         >
+          {selectedTimeSlot && (
+            <HStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+              <Text fontSize="$sm" fontFamily="Manrope_400Regular" color="#A69B9B">
+                Selected: {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {selectedTimeSlot}
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedTimeSlot(null)}>
+                <Text fontSize="$sm" fontFamily="Manrope_500Medium" color="#E6C5C5">
+                  Change
+                </Text>
+              </TouchableOpacity>
+            </HStack>
+          )}
           <HStack space="md">
             <Button
               flex={1}
-              backgroundColor="#E6C5C5"
+              backgroundColor={selectedTimeSlot ? '#E6C5C5' : 'rgba(230, 197, 197, 0.5)'}
               borderRadius="$lg"
               paddingVertical="$3"
               onPress={handleBookNow}
+              disabled={!selectedTimeSlot}
               $active-backgroundColor="#D4A3A4"
             >
               <ButtonText
                 fontSize="$md"
                 fontFamily="Manrope_700Bold"
-                color="#4D4141"
+                color={selectedTimeSlot ? '#4D4141' : '#A69B9B'}
               >
-                Book Now
+                {selectedTimeSlot ? 'Book Now' : 'Select a time slot'}
               </ButtonText>
             </Button>
             

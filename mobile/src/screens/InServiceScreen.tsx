@@ -10,22 +10,13 @@ import {
   ProgressFilledTrack,
 } from '@gluestack-ui/themed';
 import { StatusBar, TouchableOpacity, ImageBackground, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useAppNavigation, useAppRoute } from '../navigation/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, SplineSans_400Regular, SplineSans_500Medium, SplineSans_600SemiBold, SplineSans_700Bold } from '@expo-google-fonts/spline-sans';
 
-type InServiceScreenRouteProp = RouteProp<{
-  InService: {
-    serviceName: string;
-    duration: number; // in minutes
-    therapistName: string;
-    orderId: string;
-  };
-}, 'InService'>;
-
 export default function InServiceScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<InServiceScreenRouteProp>();
+  const navigation = useAppNavigation();
+  const route = useAppRoute<'InService'>();
   const [fontsLoaded] = useFonts({
     SplineSans_400Regular,
     SplineSans_500Medium,
@@ -70,7 +61,7 @@ export default function InServiceScreen() {
                 {
                   text: 'Leave Review',
                   onPress: () => {
-                    (navigation as any).navigate('Review', {
+                    navigation.navigate('Review', {
                       therapistName: serviceData.therapistName,
                       serviceName: serviceData.serviceName,
                       orderId: serviceData.orderId,
