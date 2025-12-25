@@ -80,21 +80,22 @@ export interface LoginResponse {
   therapist: TherapistInfo; // 后端返回 'therapist' 字段
 }
 
+// 后端返回的技师信息（完全匹配后端 TherapistInfo schema）
 export interface TherapistInfo {
   id: number;
   user_id: number;
   phone: string;
-  nickname: string;
-  avatar: string;
-  role: string;
-  name: string;
-  title: string;
+  nickname: string;  // 来自 User 表
+  avatar: string;     // 来自 User 表
+  role: string;       // 来自 User 表
+  name: string;       // 来自 Therapist 表
+  title: string;      // 来自 Therapist 表
   experience_years: number;
-  rating: number;
-  review_count: number;  // 与后端一致
-  completed_count: number;  // 与后端一致
-  is_verified: boolean;
-  is_active: boolean;  // 与后端一致
+  rating: number;     // 平均评分
+  review_count: number;   // 评价数量
+  completed_count: number; // 完成订单数
+  is_verified: boolean;   // 是否认证
+  is_active: boolean;     // 是否激活
 }
 
 export interface RegisterRequest {

@@ -106,3 +106,37 @@ class RatingDistribution(BaseModel):
     star_2: int = 0
     star_1: int = 0
 
+
+# ============ 个人信息管理 ============
+
+class UpdateProfileRequest(BaseModel):
+    """更新个人信息请求"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100, description="姓名")
+    title: Optional[str] = Field(None, min_length=1, max_length=100, description="职称")
+    avatar: Optional[str] = Field(None, max_length=500, description="头像 URL")
+    about: Optional[str] = Field(None, max_length=2000, description="个人简介")
+    experience_years: Optional[int] = Field(None, ge=0, le=50, description="工作年限")
+    specialties: Optional[List[str]] = Field(None, description="擅长服务")
+    service_areas: Optional[List[str]] = Field(None, description="服务区域")
+    base_price: Optional[float] = Field(None, ge=0, description="基础价格")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "张技师",
+                "title": "高级按摩师",
+                "about": "10年从业经验，擅长全身按摩和足底按摩",
+                "experience_years": 10,
+                "specialties": ["全身按摩", "足底按摩", "精油推拿"],
+                "service_areas": ["上海市徐汇区", "上海市长宁区"],
+                "base_price": 150.0
+            }
+        }
+
+
+class UpdateProfileResponse(BaseModel):
+    """更新个人信息响应"""
+    message: str = "个人信息更新成功"
+    therapist: "TherapistDetailResponse"
+
+

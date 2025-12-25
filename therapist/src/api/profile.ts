@@ -1,137 +1,75 @@
 /**
- * 技师资料相关 API
+ * 个人信息管理 API
  */
 
 import { request } from './client';
-import {
-  TherapistProfile,
-  TherapistStats,
-  UpdateProfileRequest,
-  UpdateStatusRequest,
-  Certification,
-} from '../types/user';
+import apiClient from './client';
+import { TherapistProfile } from '../types/user';
+
+export interface UpdateProfileRequest {
+  name?: string;
+  title?: string;
+  avatar?: string;
+  about?: string;
+  experience_years?: number;
+  specialties?: string[];
+  service_areas?: string[];
+  base_price?: number;
+}
+
+export interface UploadResponse {
+  url: string;
+  filename: string;
+  size: number;
+  content_type: string;
+}
 
 /**
- * 获取技师资料
+ * 更新个人信息
  */
-export const getProfile = async (): Promise<TherapistProfile> => {
-  return request.get<TherapistProfile>('/therapist/profile');
-};
-
-/**
- * 更新技师资料
- */
-export const updateProfile = async (data: UpdateProfileRequest): Promise<{
-  message: string;
-  profile: TherapistProfile;
-}> => {
-  return request.put('/therapist/profile', data);
-};
-
-/**
- * 更新在线状态
- */
-export const updateStatus = async (data: UpdateStatusRequest): Promise<{
-  message: string;
-  status: string;
-}> => {
-  return request.put('/therapist/status', data);
-};
-
-/**
- * 获取技师统计数据
- */
-export const getTherapistStats = async (): Promise<TherapistStats> => {
-  return request.get<TherapistStats>('/therapist/stats');
+export const updateProfile = async (data: UpdateProfileRequest): Promise<TherapistProfile> => {
+  return request.put<TherapistProfile>('/therapist/auth/profile', data);
 };
 
 /**
  * 上传头像
  */
-export const uploadAvatar = async (formData: FormData): Promise<{
-  message: string;
-  avatar_url: string;
-}> => {
-  return request.post('/therapist/profile/avatar', formData, {
+export const uploadAvatar = async (file: File | Blob): Promise<UploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await apiClient.post('/upload/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
+
+  return response.data;
 };
 
 /**
- * 添加证书
+ * 上传通用图片
  */
-export const addCertification = async (data: {
-  name: string;
-  issuer: string;
-  issue_date: string;
-  expiry_date?: string;
-  certificate_number?: string;
-  image_url?: string;
-}): Promise<{
-  message: string;
-  certification: Certification;
-}> => {
-  return request.post('/therapist/profile/certifications', data);
-};
+export const uploadImage = async (
+  file: File | Blob,
+  category: string = 'general'
+): Promise<UploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
 
-/**
- * 删除证书
- */
-export const deleteCertification = async (certificationId: string): Promise<{ message: string }> => {
-  return request.delete(`/therapist/profile/certifications/${certificationId}`);
-};
-
-/**
- * 获取评价列表
- */
-export const getReviews = async (params?: {
-  page?: number;
-  page_size?: number;
-  min_rating?: number;
-}): Promise<{
-  reviews: Array<{
-    id: string;
-    customer_name: string;
-    customer_avatar?: string;
-    rating: number;
-    comment: string;
-    service_name: string;
-    created_at: string;
-    reply?: string;
-    replied_at?: string;
-  }>;
-  total: number;
-  page: number;
-  page_size: number;
-}> => {
-  return request.get('/therapist/reviews', { params });
-};
-
-/**
- * 回复评价
- */
-export const replyReview = async (params: {
-  review_id: string;
-  reply: string;
-}): Promise<{ message: string }> => {
-  return request.post(`/therapist/reviews/${params.review_id}/reply`, {
-    reply: params.reply,
+  const response = await apiClient.post(`/upload/image?category=${category}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
   });
+
+  return response.data;
 };
 
 const profileApi = {
-  getProfile,
   updateProfile,
-  updateStatus,
-  getTherapistStats,
   uploadAvatar,
-  addCertification,
-  deleteCertification,
-  getReviews,
-  replyReview,
+  uploadImage,
 };
 
 export default profileApi;
-

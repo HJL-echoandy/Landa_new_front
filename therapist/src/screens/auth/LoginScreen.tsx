@@ -118,21 +118,12 @@ export default function LoginScreen() {
 
       console.log('✅ 登录成功:', response);
 
-      // 保存登录信息到 Redux
+      // 保存登录信息到 Redux（完整的 TherapistInfo）
       dispatch(
         loginSuccess({
           token: response.access_token,
           refreshToken: response.refresh_token,
-          user: {
-            id: response.therapist.user_id.toString(),
-            name: response.therapist.name || response.therapist.nickname,
-            phone: response.therapist.phone,
-            avatar: response.therapist.avatar,
-            role: response.therapist.role,
-            rating: response.therapist.rating,
-            review_count: response.therapist.review_count,  // 更新字段名
-            completed_count: response.therapist.completed_count,  // 更新字段名
-          } as any,
+          user: response.therapist,  // 直接使用后端返回的完整 therapist 对象
         })
       );
       

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 const COLORS = {
   primary: '#135BEC',
@@ -18,7 +20,8 @@ const COLORS = {
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
-  const [isOnline, setIsOnline] = useState(true);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [isOnline, setIsOnline] = useState(user?.is_active || false);  // 使用 is_active 作为在线状态
 
   const renderMenuItem = (icon: any, title: string, onPress?: () => void, showBorder: boolean = true) => (
     <TouchableOpacity 
@@ -35,6 +38,19 @@ export default function ProfileScreen() {
       </View>
     </TouchableOpacity>
   );
+
+  // 如果用户信息还没加载，显示加载中
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 16, color: COLORS.textSec }}>加载中...</Text>
+      </View>
+    );
+  }
+
+  // 获取头像 URL（后端使用 avatar 字段，不是 avatar_url）
+  const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.nickname || 'User')}&background=135BEC&color=fff&size=256`;
 
   return (
     <View style={styles.container}>
@@ -53,18 +69,20 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCleYbyPMVfs9FpfW5dLNAEU-lnPxvlpBX9jhfvdm2-QVL_Yqo-zDGvieqAV4xwlvc3Mq5PezjSTu1BkPHjLLY-aoPtGicHuYBv4EA53HpsXLUy3HkAiwWKPtHDW_pXpUbJfYSiRZ_0qIP2mb4Py9ffOxXucaPK4WNWnJZTrOiKTnnGf6RPCRfJDu5KoDYM9DlQhW-igOcQd7UV6KjW_Tz0t9pg9dFm5Zz56BKIrgDscS6L4GnPQUHHuT_aUhfmEmDSXlVY8cxquvA' }} 
+              source={{ uri: avatarUrl }} 
               style={styles.avatar} 
             />
-            <View style={styles.statusDot} />
+            <View style={[styles.statusDot, !user.is_active && { backgroundColor: '#9CA3AF' }]} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.name}>Alice Chen</Text>
-            <Text style={styles.role}>Certified Massage Therapist</Text>
-            <View style={styles.verifiedBadge}>
-              <MaterialIcons name="verified" size={16} color={COLORS.primary} />
-              <Text style={styles.verifiedText}>Landa Verified</Text>
-            </View>
+            <Text style={styles.name}>{user.name || user.nickname || '未命名'}</Text>
+            <Text style={styles.role}>{user.title || '按摩师'}</Text>
+            {user.is_verified && (
+              <View style={styles.verifiedBadge}>
+                <MaterialIcons name="verified" size={16} color={COLORS.primary} />
+                <Text style={styles.verifiedText}>Landa Verified</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -94,22 +112,22 @@ export default function ProfileScreen() {
               <View style={[styles.statIcon, { backgroundColor: '#EFF6FF', overflow: 'hidden' }]}>
                 <MaterialIcons name="list-alt" size={20} color={COLORS.blue} />
               </View>
-              <Text style={styles.statValue}>128</Text>
+              <Text style={styles.statValue}>{user.completed_count || 0}</Text>
               <Text style={styles.statLabel}>Total Orders</Text>
             </View>
             <View style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#FEFCE8' }]}>
                 <MaterialIcons name="star" size={20} color={COLORS.yellow} />
               </View>
-              <Text style={styles.statValue}>4.9</Text>
+              <Text style={styles.statValue}>{user.rating?.toFixed(1) || '5.0'}</Text>
               <Text style={styles.statLabel}>Avg Rating</Text>
             </View>
             <View style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#F0FDF4' }]}>
-                <MaterialIcons name="attach-money" size={20} color={COLORS.green} />
+                <MaterialIcons name="chat-bubble" size={20} color={COLORS.green} />
               </View>
-              <Text style={styles.statValue}>$450</Text>
-              <Text style={styles.statLabel}>Today</Text>
+              <Text style={styles.statValue}>{user.review_count || 0}</Text>
+              <Text style={styles.statLabel}>Reviews</Text>
             </View>
           </View>
         </View>

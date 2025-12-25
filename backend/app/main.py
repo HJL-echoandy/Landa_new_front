@@ -1,9 +1,11 @@
 """
 Landa API 主入口
 """
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from app.core.config import settings
@@ -59,6 +61,11 @@ app.add_middleware(
 
 # 注册 API 路由
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# 挂载静态文件目录（用于访问上传的图片）
+uploads_dir = os.path.join(os.getcwd(), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 # 健康检查

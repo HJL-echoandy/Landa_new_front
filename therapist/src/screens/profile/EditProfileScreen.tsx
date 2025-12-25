@@ -1,48 +1,193 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  TouchableOpacity, 
+  ScrollView, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ActivityIndicator,
+  Alert 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import * as ImagePicker from 'expo-image-picker';
+import { RootState } from '../../store';
+import { updateUser } from '../../store/authSlice';
+import profileApi from '../../api/profile';
 
 const COLORS = {
-  primary: '#197FE6', // Blue from design
-  backgroundLight: '#F6F7F8',
-  surfaceLight: '#FFFFFF',
-  textMain: '#0F172A', // Slate 900
-  textSec: '#64748B', // Slate 500
-  border: '#E2E8F0', // Slate 200
+  primary: '#f9f506',
+  primaryDark: '#e6e205',
+  backgroundLight: '#f8f8f5',
+  surfaceLight: '#ffffff',
+  textMain: '#1c1c0d',
+  textSec: 'rgba(28, 28, 13, 0.6)',
+  border: '#e8e8de',
   green: '#22C55E',
-  orange: '#F97316',
+  success: '#10b981',
+  error: '#ef4444',
 };
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
-  
-  // Form State
-  const [firstName, setFirstName] = useState('Jane');
-  const [lastName, setLastName] = useState('Doe');
-  const [bio, setBio] = useState('Certified massage therapist with over 5 years of experience specializing in deep tissue and sports recovery.');
-  const [phone, setPhone] = useState('(555) 123-4567');
-  const [email, setEmail] = useState('jane.doe@example.com');
-  const [experience, setExperience] = useState('5');
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
 
-  // Mock Data
-  const serviceAreas = ['Downtown', 'Northside'];
-  const certificates = [
-    { id: '1', name: 'Massage Therapy License', status: 'Verified', exp: 'Exp. Dec 2024', type: 'verified' },
-    { id: '2', name: 'Deep Tissue Cert', status: 'Pending', exp: 'Uploaded Yesterday', type: 'pending' },
-  ];
+  // Loading states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  // Form State
+  const [name, setName] = useState(user?.name || '');
+  const [title, setTitle] = useState('');
+  const [about, setAbout] = useState('');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [experienceYears, setExperienceYears] = useState('0');
+  const [basePrice, setBasePrice] = useState('');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<string[]>([]);
+  const [newSpecialty, setNewSpecialty] = useState('');
+  const [newServiceArea, setNewServiceArea] = useState('');
+
+  // Request permissions
+  useEffect(() => {
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('提示', '需要相册权限才能上传头像');
+      }
+    })();
+  }, []);
+
+  // Handle avatar selection
+  const handleSelectAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('选择图片失败:', error);
+      Alert.alert('错误', '选择图片失败');
+    }
+  };
+
+  // Upload avatar
+  const uploadAvatar = async (uri: string) => {
+    try {
+      setIsUploadingAvatar(true);
+
+      const formData = new FormData();
+      const filename = uri.split('/').pop() || 'avatar.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('file', {
+        uri,
+        name: filename,
+        type,
+      } as any);
+
+      const response = await profileApi.uploadAvatar(formData as any);
+      
+      setAvatar(response.url);
+      Alert.alert('成功', '头像上传成功');
+
+    } catch (error: any) {
+      console.error('上传头像失败:', error);
+      Alert.alert('错误', error.message || '上传头像失败');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  // Handle save
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+
+      const updateData = {
+        name: name.trim() || undefined,
+        title: title.trim() || undefined,
+        avatar: avatar || undefined,
+        about: about.trim() || undefined,
+        experience_years: experienceYears ? parseInt(experienceYears, 10) : undefined,
+        specialties: specialties.length > 0 ? specialties : undefined,
+        service_areas: serviceAreas.length > 0 ? serviceAreas : undefined,
+        base_price: basePrice ? parseFloat(basePrice) : undefined,
+      };
+
+      const filteredData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, v]) => v !== undefined)
+      );
+
+      console.log('更新个人信息:', filteredData);
+
+      const updatedProfile = await profileApi.updateProfile(filteredData);
+
+      dispatch(updateUser(updatedProfile as any));
+
+      Alert.alert('成功', '个人信息更新成功', [
+        { text: '确定', onPress: () => navigation.goBack() }
+      ]);
+
+    } catch (error: any) {
+      console.error('更新个人信息失败:', error);
+      Alert.alert('错误', error.message || '更新失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddSpecialty = () => {
+    if (newSpecialty.trim() && !specialties.includes(newSpecialty.trim())) {
+      setSpecialties([...specialties, newSpecialty.trim()]);
+      setNewSpecialty('');
+    }
+  };
+
+  const handleRemoveSpecialty = (index: number) => {
+    setSpecialties(specialties.filter((_, i) => i !== index));
+  };
+
+  const handleAddServiceArea = () => {
+    if (newServiceArea.trim() && !serviceAreas.includes(newServiceArea.trim())) {
+      setServiceAreas([...serviceAreas, newServiceArea.trim()]);
+      setNewServiceArea('');
+    }
+  };
+
+  const handleRemoveServiceArea = (index: number) => {
+    setServiceAreas(serviceAreas.filter((_, i) => i !== index));
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Cancel</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} disabled={isLoading}>
+          <Text style={styles.cancelText}>取消</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.saveText}>Save</Text>
+        <Text style={styles.headerTitle}>编辑资料</Text>
+        <TouchableOpacity onPress={handleSave} disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator color={COLORS.primary} />
+          ) : (
+            <Text style={styles.saveText}>保存</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -55,16 +200,34 @@ export default function EditProfileScreen() {
           {/* Profile Photo */}
           <View style={styles.photoSection}>
             <View style={styles.avatarContainer}>
-              <Image 
-                source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRx_C-Cc73A0VB9RrHm4sIA9FLpoA863u-g_5LWbl0aXzboG10vfsShy-8_iKNyCKEx3WpTMiHlLA6zG0SHKfdU9iEnxa40OqqZHaJ-ewthxwxiHOL0_TCKK_2irwMlfh_VGu1NQJUEvJTJXkLvoG2T3KvPmHsVfiV6na1aM7U4woUgb4bonKsLsH8Yd2VGZCy21V_ULxVZjE-XaOlIhSRdTn_uufPjDJlDe8VPHyP_ArXF1QQV7JqwBYcqJMBMYoTmnOWWQ68GU0' }} 
-                style={styles.avatar} 
-              />
-              <View style={styles.cameraButton}>
-                <MaterialIcons name="camera-alt" size={18} color="white" />
-              </View>
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <MaterialIcons name="person" size={64} color={COLORS.textSec} />
+                </View>
+              )}
+              {isUploadingAvatar && (
+                <View style={styles.uploadingOverlay}>
+                  <ActivityIndicator color="white" />
+                </View>
+              )}
+              <TouchableOpacity 
+                style={styles.cameraButton} 
+                onPress={handleSelectAvatar}
+                disabled={isUploadingAvatar}
+              >
+                <MaterialIcons name="camera-alt" size={18} color={COLORS.textMain} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.changePhotoBtn}>
-              <Text style={styles.changePhotoText}>Change Photo</Text>
+            <TouchableOpacity 
+              style={styles.changePhotoBtn} 
+              onPress={handleSelectAvatar}
+              disabled={isUploadingAvatar}
+            >
+              <Text style={styles.changePhotoText}>
+                {isUploadingAvatar ? '上传中...' : '更换头像'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -72,59 +235,51 @@ export default function EditProfileScreen() {
 
           {/* Personal Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={styles.sectionTitle}>基本信息</Text>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={styles.label}>姓名 *</Text>
               <TextInput 
                 style={styles.input} 
-                value={firstName} 
-                onChangeText={setFirstName}
+                value={name} 
+                onChangeText={setName}
+                placeholder="请输入姓名"
+                placeholderTextColor={COLORS.textSec}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={styles.label}>职称</Text>
               <TextInput 
                 style={styles.input} 
-                value={lastName} 
-                onChangeText={setLastName}
+                value={title} 
+                onChangeText={setTitle}
+                placeholder="如：高级按摩师"
+                placeholderTextColor={COLORS.textSec}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Bio</Text>
+              <Text style={styles.label}>个人简介</Text>
               <TextInput 
                 style={[styles.input, styles.textArea]} 
-                value={bio} 
-                onChangeText={setBio}
+                value={about} 
+                onChangeText={setAbout}
+                placeholder="介绍一下你的专长和经验..."
+                placeholderTextColor={COLORS.textSec}
                 multiline
                 numberOfLines={4}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput 
-                  style={[styles.input, { paddingRight: 40 }]} 
-                  value={phone} 
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                />
-                <MaterialIcons name="check-circle" size={20} color={COLORS.green} style={styles.verifiedIcon} />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>手机号</Text>
               <TextInput 
-                style={styles.input} 
-                value={email} 
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
+                style={[styles.input, { color: COLORS.textSec }]} 
+                value={phone} 
+                editable={false}
               />
+              <Text style={styles.hint}>手机号不可修改</Text>
             </View>
           </View>
 
@@ -132,78 +287,99 @@ export default function EditProfileScreen() {
 
           {/* Professional Details */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Professional Details</Text>
+            <Text style={styles.sectionTitle}>专业信息</Text>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Years of Experience</Text>
+              <Text style={styles.label}>工作年限</Text>
               <TextInput 
                 style={styles.input} 
-                value={experience} 
-                onChangeText={setExperience}
+                value={experienceYears} 
+                onChangeText={setExperienceYears}
                 keyboardType="numeric"
+                placeholder="请输入工作年限"
+                placeholderTextColor={COLORS.textSec}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Service Areas</Text>
+              <Text style={styles.label}>基础价格 (¥/小时)</Text>
+              <TextInput 
+                style={styles.input} 
+                value={basePrice} 
+                onChangeText={setBasePrice}
+                keyboardType="numeric"
+                placeholder="请输入基础价格"
+                placeholderTextColor={COLORS.textSec}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>擅长服务</Text>
+              <View style={styles.chipContainer}>
+                {specialties.map((spec, index) => (
+                  <View key={index} style={styles.chip}>
+                    <Text style={styles.chipText}>{spec}</Text>
+                    <TouchableOpacity 
+                      style={styles.chipClose}
+                      onPress={() => handleRemoveSpecialty(index)}
+                    >
+                      <MaterialIcons name="close" size={14} color={COLORS.textMain} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.addInputContainer}>
+                <TextInput 
+                  style={[styles.input, { flex: 1 }]} 
+                  value={newSpecialty} 
+                  onChangeText={setNewSpecialty}
+                  placeholder="添加擅长服务"
+                  placeholderTextColor={COLORS.textSec}
+                  onSubmitEditing={handleAddSpecialty}
+                />
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={handleAddSpecialty}
+                  disabled={!newSpecialty.trim()}
+                >
+                  <MaterialIcons name="add" size={24} color={COLORS.textMain} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>服务区域</Text>
               <View style={styles.chipContainer}>
                 {serviceAreas.map((area, index) => (
                   <View key={index} style={styles.chip}>
                     <Text style={styles.chipText}>{area}</Text>
-                    <TouchableOpacity style={styles.chipClose}>
-                      <MaterialIcons name="close" size={14} color={COLORS.primary} />
+                    <TouchableOpacity 
+                      style={styles.chipClose}
+                      onPress={() => handleRemoveServiceArea(index)}
+                    >
+                      <MaterialIcons name="close" size={14} color={COLORS.textMain} />
                     </TouchableOpacity>
                   </View>
                 ))}
-                <TouchableOpacity style={styles.addChip}>
-                  <MaterialIcons name="add" size={16} color={COLORS.textSec} />
-                  <Text style={styles.addChipText}>Add Area</Text>
+              </View>
+              <View style={styles.addInputContainer}>
+                <TextInput 
+                  style={[styles.input, { flex: 1 }]} 
+                  value={newServiceArea} 
+                  onChangeText={setNewServiceArea}
+                  placeholder="添加服务区域"
+                  placeholderTextColor={COLORS.textSec}
+                  onSubmitEditing={handleAddServiceArea}
+                />
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={handleAddServiceArea}
+                  disabled={!newServiceArea.trim()}
+                >
+                  <MaterialIcons name="add" size={24} color={COLORS.textMain} />
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Certificates */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Certificates</Text>
-            
-            {certificates.map((cert) => (
-              <View key={cert.id} style={styles.certCard}>
-                <View style={[
-                  styles.certIcon, 
-                  { backgroundColor: cert.type === 'verified' ? '#F0FDF4' : '#FFF7ED' }
-                ]}>
-                  <MaterialIcons 
-                    name={cert.type === 'verified' ? 'workspace-premium' : 'pending-actions'} 
-                    size={24} 
-                    color={cert.type === 'verified' ? COLORS.green : COLORS.orange} 
-                  />
-                </View>
-                <View style={styles.certInfo}>
-                  <Text style={styles.certName} numberOfLines={1}>{cert.name}</Text>
-                  <View style={styles.certMeta}>
-                    <Text style={[
-                      styles.certStatus, 
-                      { color: cert.type === 'verified' ? COLORS.green : COLORS.orange }
-                    ]}>
-                      {cert.status}
-                    </Text>
-                    <Text style={styles.certDot}>•</Text>
-                    <Text style={styles.certExp}>{cert.exp}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity style={styles.moreBtn}>
-                  <MaterialIcons name="more-vert" size={24} color={COLORS.textSec} />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addCertBtn}>
-              <MaterialIcons name="add-circle-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.addCertText}>Add New Certificate</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={{ height: 40 }} />
@@ -222,16 +398,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(246, 247, 248, 0.95)',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: COLORS.surfaceLight,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: COLORS.border,
   },
   cancelText: {
     fontSize: 16,
-    color: '#64748B',
-    fontWeight: '500',
+    color: COLORS.textSec,
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 18,
@@ -240,7 +416,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     fontSize: 16,
-    color: COLORS.primary,
+    color: COLORS.textMain,
     fontWeight: '700',
   },
   scrollContent: {
@@ -248,53 +424,64 @@ const styles = StyleSheet.create({
   },
   photoSection: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
+    backgroundColor: COLORS.surfaceLight,
   },
   avatarContainer: {
     position: 'relative',
     marginBottom: 16,
   },
   avatar: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-    borderWidth: 4,
-    borderColor: 'white',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+  },
+  avatarPlaceholder: {
+    backgroundColor: COLORS.backgroundLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraButton: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
+    bottom: 0,
+    right: 0,
     backgroundColor: COLORS.primary,
-    padding: 8,
+    padding: 10,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'white',
+    borderWidth: 3,
+    borderColor: COLORS.surfaceLight,
   },
   changePhotoBtn: {
-    backgroundColor: 'rgba(25, 127, 230, 0.1)',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
   },
   changePhotoText: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: COLORS.textSec,
+    fontWeight: '600',
     fontSize: 14,
   },
   divider: {
     height: 8,
-    backgroundColor: '#F1F5F9',
-    width: '100%',
+    backgroundColor: COLORS.backgroundLight,
   },
   section: {
-    padding: 16,
+    padding: 20,
+    backgroundColor: COLORS.surfaceLight,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.textMain,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputGroup: {
     marginBottom: 20,
@@ -306,10 +493,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.backgroundLight,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
+    borderColor: COLORS.border,
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
@@ -319,25 +506,21 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  inputWrapper: {
-    position: 'relative',
-  },
-  verifiedIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 14,
+  hint: {
+    fontSize: 12,
+    color: COLORS.textSec,
+    marginTop: 4,
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginBottom: 12,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(25, 127, 230, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(25, 127, 230, 0.2)',
+    backgroundColor: COLORS.primary,
     borderRadius: 20,
     paddingLeft: 12,
     paddingRight: 8,
@@ -345,93 +528,21 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   chipText: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: COLORS.textMain,
+    fontWeight: '600',
     fontSize: 14,
   },
   chipClose: {
     padding: 2,
   },
-  addChip: {
+  addInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 4,
-  },
-  addChipText: {
-    color: COLORS.textSec,
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  certCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 12,
-  },
-  certIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  certInfo: {
-    flex: 1,
-  },
-  certName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textMain,
-  },
-  certMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  certStatus: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  certDot: {
-    color: '#94A3B8',
-    fontSize: 12,
-  },
-  certExp: {
-    color: '#64748B',
-    fontSize: 12,
-  },
-  moreBtn: {
-    padding: 8,
-  },
-  addCertBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingVertical: 12,
     gap: 8,
-    marginTop: 8,
   },
-  addCertText: {
-    color: COLORS.primary,
-    fontWeight: '700',
-    fontSize: 16,
+  addButton: {
+    backgroundColor: COLORS.primary,
+    padding: 8,
+    borderRadius: 12,
   },
 });

@@ -3,13 +3,13 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { TherapistProfile } from '../types/user';
+import { TherapistInfo } from '../types/user';
 
 interface AuthState {
   isLoggedIn: boolean;
   token: string | null;
   refreshToken: string | null;
-  user: TherapistProfile | null;
+  user: TherapistInfo | null;  // 使用 TherapistInfo 类型
   isLoading: boolean;
   error: string | null;
 }
@@ -37,7 +37,7 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isLoading = false;
     },
-    loginSuccess: (state, action: PayloadAction<{ token: string; refreshToken?: string; user: TherapistProfile }>) => {
+    loginSuccess: (state, action: PayloadAction<{ token: string; refreshToken?: string; user: TherapistInfo }>) => {
       state.isLoggedIn = true;
       state.token = action.payload.token;
       state.refreshToken = action.payload.refreshToken || null;
@@ -45,7 +45,13 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = null;
     },
-    updateUser: (state, action: PayloadAction<Partial<TherapistProfile>>) => {
+    updateToken: (state, action: PayloadAction<{ token: string; refreshToken?: string }>) => {
+      state.token = action.payload.token;
+      if (action.payload.refreshToken) {
+        state.refreshToken = action.payload.refreshToken;
+      }
+    },
+    updateUser: (state, action: PayloadAction<Partial<TherapistInfo>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
@@ -67,6 +73,7 @@ export const {
   setLoading, 
   setError, 
   loginSuccess, 
+  updateToken,
   updateUser, 
   logout, 
   clearError 

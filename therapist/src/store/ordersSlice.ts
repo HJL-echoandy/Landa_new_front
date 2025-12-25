@@ -3,27 +3,28 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Order, OrderDetail } from '../types/order';
-import { OrderStatus } from '../utils/constants';
+import { TherapistOrder, TherapistOrderDetail, BookingStatus, OrderStats } from '../types/order';
 
 interface OrdersState {
-  orders: Order[];
-  currentOrder: OrderDetail | null;
-  pendingOrders: Order[]; // 待接单
-  acceptedOrders: Order[]; // 进行中
-  completedOrders: Order[]; // 已完成
+  orders: TherapistOrder[];
+  currentOrder: TherapistOrderDetail | null;
+  pendingOrders: TherapistOrder[];    // 待接单
+  inProgressOrders: TherapistOrder[]; // 进行中（已接单+前往中+服务中）
+  completedOrders: TherapistOrder[];  // 已完成
+  stats: OrderStats | null;           // 订单统计
   isLoading: boolean;
   error: string | null;
-  filter: OrderStatus | 'all';
-  hasNewOrder: boolean; // 是否有新订单
+  filter: BookingStatus | 'all';
+  hasNewOrder: boolean; // 是否有新订单通知
 }
 
 const initialState: OrdersState = {
   orders: [],
   currentOrder: null,
   pendingOrders: [],
-  acceptedOrders: [],
+  inProgressOrders: [],
   completedOrders: [],
+  stats: null,
   isLoading: false,
   error: null,
   filter: 'all',
@@ -44,28 +45,26 @@ const ordersSlice = createSlice({
       state.error = action.payload;
       state.isLoading = false;
     },
-    setOrders: (state, action: PayloadAction<Order[]>) => {
+    setOrders: (state, action: PayloadAction<TherapistOrder[]>) => {
       state.orders = action.payload;
       state.isLoading = false;
       state.error = null;
       
       // 分类订单
-      state.pendingOrders = action.payload.filter(o => o.status === 'pending');
-      state.acceptedOrders = action.payload.filter(o => 
-        ['accepted', 'en_route', 'arrived', 'in_progress'].includes(o.status)
+      state.pendingOrders = action.payload.filter(o => o.status === BookingStatus.PENDING);
+      state.inProgressOrders = action.payload.filter(o => 
+        [BookingStatus.CONFIRMED, BookingStatus.EN_ROUTE, BookingStatus.IN_PROGRESS].includes(o.status)
       );
-      state.completedOrders = action.payload.filter(o => 
-        ['completed', 'cancelled'].includes(o.status)
-      );
+      state.completedOrders = action.payload.filter(o => o.status === BookingStatus.COMPLETED);
     },
-    addOrder: (state, action: PayloadAction<Order>) => {
+    addOrder: (state, action: PayloadAction<TherapistOrder>) => {
       state.orders.unshift(action.payload);
-      if (action.payload.status === 'pending') {
+      if (action.payload.status === BookingStatus.PENDING) {
         state.pendingOrders.unshift(action.payload);
         state.hasNewOrder = true;
       }
     },
-    updateOrder: (state, action: PayloadAction<{ id: string; updates: Partial<Order> }>) => {
+    updateOrder: (state, action: PayloadAction<{ id: number; updates: Partial<TherapistOrder> }>) => {
       const { id, updates } = action.payload;
       
       // 更新所有订单列表
@@ -76,13 +75,11 @@ const ordersSlice = createSlice({
       
       // 重新分类
       if (updates.status) {
-        state.pendingOrders = state.orders.filter(o => o.status === 'pending');
-        state.acceptedOrders = state.orders.filter(o => 
-          ['accepted', 'en_route', 'arrived', 'in_progress'].includes(o.status)
+        state.pendingOrders = state.orders.filter(o => o.status === BookingStatus.PENDING);
+        state.inProgressOrders = state.orders.filter(o => 
+          [BookingStatus.CONFIRMED, BookingStatus.EN_ROUTE, BookingStatus.IN_PROGRESS].includes(o.status)
         );
-        state.completedOrders = state.orders.filter(o => 
-          ['completed', 'cancelled'].includes(o.status)
-        );
+        state.completedOrders = state.orders.filter(o => o.status === BookingStatus.COMPLETED);
       }
       
       // 更新当前订单
@@ -90,10 +87,13 @@ const ordersSlice = createSlice({
         state.currentOrder = { ...state.currentOrder, ...updates };
       }
     },
-    setCurrentOrder: (state, action: PayloadAction<OrderDetail | null>) => {
+    setCurrentOrder: (state, action: PayloadAction<TherapistOrderDetail | null>) => {
       state.currentOrder = action.payload;
     },
-    setFilter: (state, action: PayloadAction<OrderStatus | 'all'>) => {
+    setStats: (state, action: PayloadAction<OrderStats>) => {
+      state.stats = action.payload;
+    },
+    setFilter: (state, action: PayloadAction<BookingStatus | 'all'>) => {
       state.filter = action.payload;
     },
     clearNewOrderFlag: (state) => {
@@ -112,6 +112,7 @@ export const {
   addOrder,
   updateOrder,
   setCurrentOrder,
+  setStats,
   setFilter,
   clearNewOrderFlag,
   clearError,

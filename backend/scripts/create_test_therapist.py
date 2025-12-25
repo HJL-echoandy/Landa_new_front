@@ -12,6 +12,7 @@ from sqlalchemy import select
 from app.core.database import AsyncSessionLocal
 from app.models.user import User, UserRole
 from app.models.therapist import Therapist
+from app.utils.avatar import generate_default_avatar  # 添加头像生成工具
 
 
 async def create_test_therapist():
@@ -63,11 +64,15 @@ async def create_test_therapist():
         # 创建新账号
         print("📝 正在创建测试技师账号...")
         
+        # ✅ 生成默认头像
+        default_avatar = generate_default_avatar("13800138000")
+        print(f"🎨 生成默认头像: {default_avatar}")
+        
         # 1. 创建用户
         user = User(
             phone="13800138000",
             nickname="测试技师",
-            avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=therapist",
+            avatar=default_avatar,  # ✅ 使用生成的默认头像
             role=UserRole.THERAPIST,
             is_verified=True,
             is_active=True
@@ -80,9 +85,10 @@ async def create_test_therapist():
             user_id=user.id,
             name="测试技师",
             title="高级按摩师",
+            avatar=default_avatar,  # ✅ 同步设置头像
             experience_years=5,
             rating=4.8,
-            review_count=120,  # 使用正确的字段名
+            review_count=120,
             booking_count=450,
             completed_count=450,
             specialties=["推拿", "按摩", "拔罐"],

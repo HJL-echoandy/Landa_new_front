@@ -35,8 +35,8 @@ export const sendVerificationCode = async (data: VerificationCodeRequest): Promi
 /**
  * 刷新 Token
  */
-export const refreshToken = async (): Promise<{ access_token: string; expires_in: number }> => {
-  return request.post('/therapist/auth/refresh');
+export const refreshToken = async (refreshTokenValue: string): Promise<{ access_token: string; refresh_token: string; expires_in: number }> => {
+  return request.post('/therapist/auth/refresh', { refresh_token: refreshTokenValue });
 };
 
 /**
@@ -50,7 +50,7 @@ export const logout = async (): Promise<{ message: string }> => {
  * 获取当前技师信息
  */
 export const getCurrentTherapist = async (): Promise<TherapistProfile> => {
-  return request.get<TherapistProfile>('/therapist/profile');
+  return request.get<TherapistProfile>('/therapist/auth/profile');
 };
 
 const authApi = {
