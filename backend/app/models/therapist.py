@@ -1,12 +1,20 @@
 """
 治疗师模型
 """
+import enum
 from datetime import datetime, date, time
 from typing import Optional, List
-from sqlalchemy import String, Boolean, DateTime, Text, Integer, Float, JSON, Date, Time, ForeignKey
+from sqlalchemy import String, Boolean, DateTime, Text, Integer, Float, JSON, Date, Time, ForeignKey, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+class TherapistStatus(str, enum.Enum):
+    """技师状态枚举"""
+    ONLINE = "online"     # 在线 - 可接单
+    BUSY = "busy"         # 忙碌 - 暂不接单
+    OFFLINE = "offline"   # 离线 - 不可接单
 
 
 class Therapist(Base):
@@ -46,7 +54,11 @@ class Therapist(Base):
     max_distance: Mapped[int] = mapped_column(Integer, default=10)
     
     # 状态
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[str] = mapped_column(
+        Enum(TherapistStatus),
+        default=TherapistStatus.OFFLINE,
+        nullable=False
+    )
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     

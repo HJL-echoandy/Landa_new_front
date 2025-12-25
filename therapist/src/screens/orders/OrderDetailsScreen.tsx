@@ -1,8 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { updateOrder, setCurrentOrder } from '../../store/ordersSlice';
+import ordersApi from '../../api/orders';
+import { BookingStatus } from '../../types/order';
 
 const COLORS = {
   primary: '#F9F506', // Landa Yellow
@@ -22,9 +27,135 @@ const COLORS = {
 export default function OrderDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const dispatch = useDispatch();
   
-  // In a real app, fetch order details using route.params.orderId
-  const orderId = (route.params as any)?.orderId || '28491';
+  const { currentOrder } = useSelector((state: RootState) => state.orders);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Get bookingId from route params
+  const bookingId = (route.params as any)?.orderId || (route.params as any)?.bookingId;
+
+  // Load order details
+  useEffect(() => {
+    if (bookingId) {
+      loadOrderDetails();
+    }
+  }, [bookingId]);
+
+  const loadOrderDetails = async () => {
+    try {
+      setIsLoading(true);
+      const orderDetail = await ordersApi.getOrderDetail(bookingId);
+      dispatch(setCurrentOrder(orderDetail));
+    } catch (error: any) {
+      console.error('加载订单详情失败:', error);
+      Alert.alert('错误', error.message || '加载订单详情失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Accept Order
+  const handleAcceptOrder = async () => {
+    if (!currentOrder) return;
+
+    Alert.alert(
+      '接受订单',
+      '确认接受此订单吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认接受',
+          onPress: async () => {
+            try {
+              setIsAccepting(true);
+              const response = await ordersApi.acceptOrder(currentOrder.id);
+              
+              // Update Redux
+              dispatch(updateOrder({
+                id: currentOrder.id,
+                updates: { status: BookingStatus.CONFIRMED }
+              }));
+              
+              Alert.alert('成功', '订单已接受！', [
+                { text: '确定', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error: any) {
+              console.error('接单失败:', error);
+              Alert.alert('错误', error.message || '接单失败');
+            } finally {
+              setIsAccepting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Reject Order
+  const handleRejectOrder = async () => {
+    if (!currentOrder) return;
+
+    Alert.prompt(
+      '拒绝订单',
+      '请输入拒绝原因：',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认拒绝',
+          onPress: async (reason) => {
+            if (!reason || reason.trim() === '') {
+              Alert.alert('提示', '请输入拒绝原因');
+              return;
+            }
+
+            try {
+              setIsRejecting(true);
+              await ordersApi.rejectOrder(currentOrder.id, { reason: reason.trim() });
+              
+              // Update Redux
+              dispatch(updateOrder({
+                id: currentOrder.id,
+                updates: { status: BookingStatus.CANCELLED }
+              }));
+              
+              Alert.alert('成功', '订单已拒绝', [
+                { text: '确定', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error: any) {
+              console.error('拒单失败:', error);
+              Alert.alert('错误', error.message || '拒单失败');
+            } finally {
+              setIsRejecting(false);
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 16, color: COLORS.textSec }}>加载中...</Text>
+      </View>
+    );
+  }
+
+  if (!currentOrder) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: COLORS.textSec }}>订单不存在</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+          <Text style={{ color: COLORS.primary }}>返回</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -37,7 +168,7 @@ export default function OrderDetailsScreen() {
           >
             <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Order #{orderId}</Text>
+          <Text style={styles.headerTitle}>订单 #{currentOrder.booking_no}</Text>
           <TouchableOpacity style={styles.iconButton}>
             <MaterialIcons name="shield" size={24} color={COLORS.textMain} />
           </TouchableOpacity>
@@ -46,12 +177,16 @@ export default function OrderDetailsScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Status Section */}
           <View style={styles.section}>
-            <View style={styles.statusBadge}>
-              <View style={styles.pulseDot} />
-              <Text style={styles.statusText}>ACTION REQUIRED</Text>
-            </View>
-            <Text style={styles.statusTitle}>Pending Acceptance</Text>
-            <Text style={styles.statusDesc}>Please respond within 15 minutes to maintain your rating.</Text>
+            {currentOrder.status === BookingStatus.PENDING && (
+              <>
+                <View style={styles.statusBadge}>
+                  <View style={styles.pulseDot} />
+                  <Text style={styles.statusText}>需要操作</Text>
+                </View>
+                <Text style={styles.statusTitle}>等待接单</Text>
+                <Text style={styles.statusDesc}>请在15分钟内响应以维持您的评分。</Text>
+              </>
+            )}
           </View>
 
           {/* Time Card */}
@@ -60,8 +195,8 @@ export default function OrderDetailsScreen() {
               <MaterialIcons name="schedule" size={24} color={COLORS.textMain} />
             </View>
             <View>
-              <Text style={styles.label}>Scheduled Time</Text>
-              <Text style={styles.value}>Today, 14:00 - 15:00</Text>
+              <Text style={styles.label}>预约时间</Text>
+              <Text style={styles.value}>{currentOrder.booking_date} {currentOrder.start_time} - {currentOrder.end_time}</Text>
             </View>
           </View>
 
@@ -71,16 +206,12 @@ export default function OrderDetailsScreen() {
             <View style={styles.clientRow}>
               <View style={styles.clientInfo}>
                 <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGdoXy0uMlqf8e1c4yyqYKSb2ODK1yegBIfjTPvAOccERk0dpLy-0mEmF_4EflhG67yeHUtQ3TXGBSsM6QN843f0iuXYthv45M550xrqsXyoeDMalkC8c64E424hS1gHp0jS-GaMxS7YEn92R2JZC8Jl8FDsFYfowFEHsoQ-xXX1ofBctTY2651WIEDYbB_zYFQ8j4ITp1VvV8tAjUQ3dsfxbyr4q8xew5nmTQ4NJActpF0IAIzsynj43L_ZKdVacCYqIAd_rTsf8' }} 
+                  source={{ uri: currentOrder.customer_avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentOrder.customer_name) }} 
                   style={styles.avatar} 
                 />
                 <View>
-                  <Text style={styles.clientName}>Jane D.</Text>
-                  <View style={styles.ratingRow}>
-                    <MaterialIcons name="star" size={16} color={COLORS.primaryDark} />
-                    <Text style={styles.ratingText}>4.9</Text>
-                    <Text style={styles.ratingCount}>(24 orders)</Text>
-                  </View>
+                  <Text style={styles.clientName}>{currentOrder.customer_name}</Text>
+                  <Text style={styles.clientPhone}>{currentOrder.customer_phone}</Text>
                 </View>
               </View>
               <View style={styles.contactButtons}>
@@ -93,29 +224,16 @@ export default function OrderDetailsScreen() {
               </View>
             </View>
 
-            {/* Map Card */}
+            {/* Address Card */}
             <View style={styles.mapCard}>
-              <View style={styles.mapContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrEkxNaiu59YPX7cJ_14IRzbQ6E5t9n-c8ffuvFj7eh2fdAQea5LmEK0hkx2vK9hCSK-Yv0p8mtz7NIPuFaRMkDzIzvJiAImwJJSdb2kNQgHsAyr8xxQZk0JRZNYqeWOaV0T7IKzRQ9k87rAheWRRQbPUvFReW49_trkLWT1u8c2JCKIQlHcapn70nAT9zP_pOVaoHXZFZjLQZGquOm5yGephQVIocyP_jSa5_Ou9bjwDbpry7jcWNN0Suel07VTeckLOlXOL_Au4' }} 
-                  style={styles.mapImage} 
-                />
-                <TouchableOpacity style={styles.navigateBtn}>
-                  <MaterialIcons name="navigation" size={16} color={COLORS.textMain} />
-                  <Text style={styles.navigateText}>Navigate</Text>
-                </TouchableOpacity>
-              </View>
               <View style={styles.addressContainer}>
                 <View style={styles.locationIcon}>
                    <MaterialIcons name="location-on" size={24} color={COLORS.textSec} />
                 </View>
-                <View>
-                  <Text style={styles.addressTitle}>123 Main St, Apt 4B</Text>
-                  <Text style={styles.addressSub}>Los Angeles, CA 90012</Text>
-                  <View style={styles.distanceBadge}>
-                    <MaterialIcons name="near-me" size={14} color={COLORS.textSec} />
-                    <Text style={styles.distanceText}>3.2 km away</Text>
-                  </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.addressTitle}>{currentOrder.address_detail}</Text>
+                  <Text style={styles.addressSub}>联系人：{currentOrder.address_contact}</Text>
+                  <Text style={styles.addressSub}>电话：{currentOrder.address_phone}</Text>
                 </View>
               </View>
             </View>
@@ -123,15 +241,15 @@ export default function OrderDetailsScreen() {
 
           {/* Service Details */}
           <View style={styles.cardContainer}>
-            <Text style={styles.cardTitle}>Service Details</Text>
+            <Text style={styles.cardTitle}>服务详情</Text>
             
             <View style={styles.detailRow}>
-              <View style={[styles.detailIcon, { backgroundColor: '#F3E8FF',  }]}>
+              <View style={[styles.detailIcon, { backgroundColor: '#F3E8FF' }]}>
                 <MaterialCommunityIcons name="spa" size={24} color={COLORS.purple} />
               </View>
               <View>
-                <Text style={styles.detailLabel}>Service Type</Text>
-                <Text style={styles.detailValue}>Swedish Massage</Text>
+                <Text style={styles.detailLabel}>服务类型</Text>
+                <Text style={styles.detailValue}>{currentOrder.service_name}</Text>
               </View>
             </View>
 
@@ -142,57 +260,78 @@ export default function OrderDetailsScreen() {
                 <MaterialCommunityIcons name="timer-outline" size={24} color={COLORS.blue} />
               </View>
               <View>
-                <Text style={styles.detailLabel}>Duration</Text>
-                <Text style={styles.detailValue}>60 Minutes</Text>
+                <Text style={styles.detailLabel}>服务时长</Text>
+                <Text style={styles.detailValue}>{currentOrder.service_duration} 分钟</Text>
               </View>
             </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.detailRow}>
-              <View style={[styles.detailIcon, { backgroundColor: '#FFEDD5' }]}>
-                <MaterialCommunityIcons name="oil" size={24} color={COLORS.orange} />
-              </View>
-              <View>
-                <Text style={styles.detailLabel}>Add-ons</Text>
-                <Text style={styles.detailValue}>Aromatherapy</Text>
-              </View>
-            </View>
+            {currentOrder.user_note && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.detailRow}>
+                  <View style={[styles.detailIcon, { backgroundColor: '#FEF3C7' }]}>
+                    <MaterialIcons name="note" size={24} color={COLORS.orange} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>客户备注</Text>
+                    <Text style={styles.detailValue}>{currentOrder.user_note}</Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
 
           {/* Financial Breakdown */}
           <View style={styles.cardContainer}>
-            <Text style={styles.cardTitle}>Earnings</Text>
+            <Text style={styles.cardTitle}>收入明细</Text>
             
             <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Base Pay</Text>
-              <Text style={styles.financialValue}>$85.00</Text>
+              <Text style={styles.financialLabel}>服务费</Text>
+              <Text style={styles.financialValue}>¥{currentOrder.service_price.toFixed(2)}</Text>
             </View>
-            <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Travel Fee</Text>
-              <Text style={styles.financialValue}>$15.00</Text>
-            </View>
-            <View style={[styles.financialRow, styles.financialBorder]}>
-              <Text style={styles.financialLabel}>Add-on: Aromatherapy</Text>
-              <Text style={styles.financialValue}>$10.00</Text>
-            </View>
-            <View style={[styles.financialRow, { paddingTop: 12 }]}>
-              <Text style={styles.totalLabel}>Total Earnings</Text>
-              <Text style={styles.totalValue}>$110.00</Text>
+            {currentOrder.discount_amount > 0 && (
+              <View style={styles.financialRow}>
+                <Text style={styles.financialLabel}>折扣</Text>
+                <Text style={styles.financialValue}>-¥{currentOrder.discount_amount.toFixed(2)}</Text>
+              </View>
+            )}
+            <View style={[styles.financialRow, { paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border }]}>
+              <Text style={styles.totalLabel}>总收入</Text>
+              <Text style={styles.totalValue}>¥{currentOrder.total_price.toFixed(2)}</Text>
             </View>
           </View>
         </ScrollView>
 
         {/* Footer Actions */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.rejectBtn}>
-            <Text style={styles.rejectText}>Reject</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.acceptBtn}>
-            <Text style={styles.acceptBtnText}>Accept Order</Text>
-            <MaterialIcons name="check-circle" size={20} color="black" />
-          </TouchableOpacity>
-        </View>
+        {currentOrder.status === BookingStatus.PENDING && (
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              style={[styles.rejectBtn, isRejecting && { opacity: 0.5 }]}
+              onPress={handleRejectOrder}
+              disabled={isRejecting || isAccepting}
+            >
+              {isRejecting ? (
+                <ActivityIndicator size="small" color={COLORS.textMain} />
+              ) : (
+                <Text style={styles.rejectText}>拒绝</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.acceptBtn, isAccepting && { opacity: 0.5 }]}
+              onPress={handleAcceptOrder}
+              disabled={isAccepting || isRejecting}
+            >
+              {isAccepting ? (
+                <ActivityIndicator size="small" color="black" />
+              ) : (
+                <>
+                  <Text style={styles.acceptBtnText}>接受订单</Text>
+                  <MaterialIcons name="check-circle" size={20} color="black" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -314,6 +453,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.textMain,
+  },
+  clientPhone: {
+    fontSize: 14,
+    color: COLORS.textSec,
+    marginTop: 2,
   },
   ratingRow: {
     flexDirection: 'row',

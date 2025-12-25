@@ -9,6 +9,7 @@ import {
   RegisterRequest,
   VerificationCodeRequest,
   TherapistProfile,
+  UpdateStatusRequest,
 } from '../types/user';
 
 /**
@@ -53,6 +54,13 @@ export const getCurrentTherapist = async (): Promise<TherapistProfile> => {
   return request.get<TherapistProfile>('/therapist/auth/profile');
 };
 
+/**
+ * 更新技师状态
+ */
+export const updateTherapistStatus = async (status: string): Promise<{ message: string; status: string }> => {
+  return request.put('/therapist/auth/status', { status });
+};
+
 const authApi = {
   login,
   register,
@@ -60,7 +68,7 @@ const authApi = {
   refreshToken,
   logout,
   getCurrentTherapist,
+  updateTherapistStatus,
 };
 
 export default authApi;
-

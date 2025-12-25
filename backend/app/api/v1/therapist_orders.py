@@ -193,6 +193,11 @@ async def get_therapist_orders(
         if not user or not service or not address:
             continue
         
+        # 组合完整地址
+        full_address = f"{address.province}{address.city}{address.district}{address.street}"
+        if address.detail:
+            full_address += f" {address.detail}"
+        
         response_data.append(TherapistOrderListItem(
             id=booking.id,
             booking_no=booking.booking_no,
@@ -203,9 +208,9 @@ async def get_therapist_orders(
             service_name=service.name,
             service_duration=booking.duration,
             service_price=booking.service_price,
-            address_detail=address.full_address,
+            address_detail=full_address,  # 使用组合的完整地址
             address_contact=address.contact_name,
-            address_phone=address.phone,
+            address_phone=address.contact_phone,  # 修复：使用 contact_phone
             address_lat=address.latitude,
             address_lng=address.longitude,
             booking_date=booking.booking_date,
@@ -271,6 +276,11 @@ async def get_order_detail(
     address_result = await db.execute(select(Address).where(Address.id == booking.address_id))
     address = address_result.scalar_one()
     
+    # 组合完整地址
+    full_address = f"{address.province}{address.city}{address.district}{address.street}"
+    if address.detail:
+        full_address += f" {address.detail}"
+    
     return TherapistOrderDetail(
         id=booking.id,
         booking_no=booking.booking_no,
@@ -281,9 +291,9 @@ async def get_order_detail(
         service_name=service.name,
         service_duration=booking.duration,
         service_price=booking.service_price,
-        address_detail=address.full_address,
+        address_detail=full_address,
         address_contact=address.contact_name,
-        address_phone=address.phone,
+        address_phone=address.contact_phone,  # 修复：使用 contact_phone
         address_lat=address.latitude,
         address_lng=address.longitude,
         booking_date=booking.booking_date,

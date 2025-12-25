@@ -95,7 +95,7 @@ export interface TherapistInfo {
   review_count: number;   // 评价数量
   completed_count: number; // 完成订单数
   is_verified: boolean;   // 是否认证
-  is_active: boolean;     // 是否激活
+  status: string;     // ✅ 技师状态: "online" | "busy" | "offline"
 }
 
 export interface RegisterRequest {

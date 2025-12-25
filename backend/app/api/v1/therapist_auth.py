@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
 from app.models.user import User, UserRole
-from app.models.therapist import Therapist
+from app.models.therapist import Therapist, TherapistStatus
 from app.schemas.auth import (
     SMSCodeRequest,
     SMSCodeResponse,
@@ -49,7 +49,7 @@ class TherapistInfo(BaseModel):
     review_count: int = 0  # 与数据库模型一致
     completed_count: int = 0  # 与数据库模型一致
     is_verified: bool = False
-    is_active: bool = True  # 与数据库模型一致
+    status: str = TherapistStatus.OFFLINE  # ✅ 使用 TherapistStatus 枚举
     
     class Config:
         from_attributes = True
@@ -196,7 +196,7 @@ async def therapist_login(
             booking_count=0,
             completed_count=0,
             base_price=0,
-            is_active=True,
+            status=TherapistStatus.OFFLINE,  # ✅ 使用枚举默认值
             is_verified=False,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
@@ -236,7 +236,7 @@ async def therapist_login(
             review_count=therapist.review_count,  # 直接使用数据库字段
             completed_count=therapist.completed_count,  # 直接使用数据库字段
             is_verified=therapist.is_verified,
-            is_active=therapist.is_active  # 直接使用数据库字段
+            status=therapist.status  # ✅ 使用新的 status 字段
         )
     )
 
@@ -334,7 +334,7 @@ async def get_current_therapist_profile(
         review_count=therapist.review_count,
         completed_count=therapist.completed_count,
         is_verified=therapist.is_verified,
-        is_active=therapist.is_active
+        status=therapist.status  # ✅ 使用新的 status 字段
     )
 
 
@@ -393,7 +393,71 @@ async def update_therapist_profile(
         review_count=therapist.review_count,
         completed_count=therapist.completed_count,
         is_verified=therapist.is_verified,
-        is_active=therapist.is_active
+        status=therapist.status  # ✅ 使用新的 status 字段
     )
 
 
+# ==================== 技师状态管理 ====================
+
+class UpdateTherapistStatusRequest(BaseModel):
+    """更新技师状态请求"""
+    status: str = Field(..., description="技师状态: online, busy, offline")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "online"
+            }
+        }
+
+
+class UpdateTherapistStatusResponse(BaseModel):
+    """更新技师状态响应"""
+    message: str = "状态更新成功"
+    status: str
+
+
+@router.put("/status", response_model=UpdateTherapistStatusResponse, summary="更新技师状态")
+async def update_therapist_status(
+    request: UpdateTherapistStatusRequest,
+    current_user: User = Depends(require_role(UserRole.THERAPIST)),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    更新技师状态
+    
+    - **online**: 在线，可接单
+    - **busy**: 忙碌，暂不接单
+    - **offline**: 离线，不可接单
+    """
+    # 验证状态值
+    valid_statuses = [s.value for s in TherapistStatus]
+    if request.status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+    
+    # 查询技师信息
+    result = await db.execute(
+        select(Therapist).where(Therapist.user_id == current_user.id)
+    )
+    therapist = result.scalar_one_or_none()
+    
+    if not therapist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Therapist profile not found"
+        )
+    
+    # 更新状态
+    therapist.status = request.status
+    therapist.updated_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(therapist)
+    
+    return UpdateTherapistStatusResponse(
+        message="状态更新成功",
+        status=therapist.status
+    )
