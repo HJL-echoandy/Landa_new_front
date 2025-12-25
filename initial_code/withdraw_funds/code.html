@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Withdraw Funds</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#23220f",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2f2e1a",
+                        "text-main-light": "#1c1c0d",
+                        "text-main-dark": "#ffffff",
+                        "text-muted-light": "#9e9d47",
+                        "text-muted-dark": "#abaa6f",
+                        "border-light": "#e9e8ce",
+                        "border-dark": "#4a4930",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom styles to remove spinner from number input */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-text-main-light dark:text-text-main-dark transition-colors duration-200">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Withdraw Funds</h2>
+<button class="flex h-10 px-2 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all">
+<p class="text-text-muted-light dark:text-primary font-bold text-sm">History</p>
+</button>
+</div>
+<!-- Main Content -->
+<main class="flex-1 px-4 pb-8 flex flex-col gap-6 w-full max-w-md mx-auto">
+<!-- Spacing -->
+<div class="h-2"></div>
+<!-- Balance Card -->
+<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl p-6 flex flex-col items-center justify-center gap-2 shadow-sm">
+<p class="text-4xl font-bold tracking-tight text-text-main-light dark:text-white">¥ 1,240.50</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium">Withdrawable Balance</p>
+</div>
+<!-- Bank Selector -->
+<div class="group relative">
+<button class="w-full flex items-center gap-4 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-4 rounded-xl shadow-sm hover:border-primary/50 transition-colors">
+<div class="flex items-center justify-center rounded-full bg-[#f4f4e6] dark:bg-white/10 shrink-0 size-12 text-text-main-light dark:text-primary">
+<span class="material-symbols-outlined text-[24px]">account_balance</span>
+</div>
+<div class="flex flex-col items-start flex-1 overflow-hidden">
+<p class="text-text-main-light dark:text-white text-base font-bold truncate w-full text-left">China Construction Bank</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-xs font-normal">Ending in 8821</p>
+</div>
+<div class="shrink-0 text-text-muted-light dark:text-text-muted-dark">
+<span class="material-symbols-outlined text-[24px]">chevron_right</span>
+</div>
+</button>
+</div>
+<!-- Input Section -->
+<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl p-5 shadow-sm">
+<label class="flex flex-col w-full">
+<p class="text-text-main-light dark:text-text-main-dark text-sm font-bold pb-4">Withdrawal Amount</p>
+<div class="relative flex items-center">
+<span class="text-3xl font-bold text-text-main-light dark:text-white mr-2">¥</span>
+<input class="form-input flex w-full min-w-0 bg-transparent border-none p-0 text-4xl font-bold text-text-main-light dark:text-white placeholder:text-border-light dark:placeholder:text-white/20 focus:ring-0 leading-none h-12" inputmode="decimal" placeholder="0.00" type="number" value=""/>
+</div>
+</label>
+<div class="w-full h-px bg-border-light dark:bg-border-dark my-4"></div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-text-muted-light dark:text-text-muted-dark">Available: ¥ 1,240.50</span>
+<button class="text-primary dark:text-primary text-sm font-bold hover:underline">Withdraw All</button>
+</div>
+</div>
+<!-- Info Group -->
+<div class="px-2 flex flex-col gap-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-text-muted-light dark:text-text-muted-dark">Minimum withdrawal</span>
+<span class="text-text-main-light dark:text-text-main-dark font-medium">¥ 100.00</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-text-muted-light dark:text-text-muted-dark">Service Fee (0.1%)</span>
+<span class="text-text-main-light dark:text-text-main-dark font-medium">¥ 0.00</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-text-muted-light dark:text-text-muted-dark">Estimated Arrival</span>
+<span class="text-text-main-light dark:text-text-main-dark font-medium">Within 2 hours (T+1)</span>
+</div>
+</div>
+</main>
+<!-- Footer Action -->
+<div class="mt-auto px-4 pb-6 pt-2 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark">
+<button class="w-full bg-primary hover:bg-[#e6e205] text-black font-bold text-lg h-14 rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+            Confirm Withdrawal
+        </button>
+<p class="text-center text-[10px] text-text-muted-light dark:text-text-muted-dark mt-4 px-8 leading-tight">
+            By clicking confirm, you agree to the platform's withdrawal terms and conditions.
+        </p>
+</div>
+<!-- Toggle Dark Mode Script (Simulated for this demo) -->
+<script>
+        // Simple script to demonstrate dark mode based on system preference or manual toggle if implemented
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</body></html>

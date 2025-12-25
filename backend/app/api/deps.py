@@ -33,14 +33,16 @@ async def get_current_user(
         HTTPException: 认证失败
     """
     token = credentials.credentials
-    user_id = verify_token(token, "access")
+    token_data = verify_token(token, "access")
     
-    if not user_id:
+    if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    user_id = token_data.get("user_id")
     
     # 查询用户
     result = await db.execute(
@@ -77,10 +79,12 @@ async def get_current_user_optional(
         return None
     
     token = credentials.credentials
-    user_id = verify_token(token, "access")
+    token_data = verify_token(token, "access")
     
-    if not user_id:
+    if not token_data:
         return None
+    
+    user_id = token_data.get("user_id")
     
     result = await db.execute(
         select(User).where(User.id == int(user_id))
@@ -88,4 +92,32 @@ async def get_current_user_optional(
     user = result.scalar_one_or_none()
     
     return user if user and user.is_active else None
+
+
+def require_role(*allowed_roles: str):
+    """
+    角色验证依赖工厂
+    
+    用法:
+        @router.get("/therapist/orders")
+        async def get_orders(user: User = Depends(require_role("therapist"))):
+            ...
+    
+    Args:
+        allowed_roles: 允许的角色列表
+        
+    Returns:
+        FastAPI 依赖函数
+    """
+    async def role_checker(
+        current_user: User = Depends(get_current_user)
+    ) -> User:
+        if current_user.role.value not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"权限不足。需要角色: {', '.join(allowed_roles)}"
+            )
+        return current_user
+    
+    return role_checker
 

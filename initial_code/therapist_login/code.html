@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Landa Therapist Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#23220f",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d2c18",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-[#1c1c0d] dark:text-[#f2f2e6]">
+<div class="relative flex min-h-screen w-full flex-col overflow-hidden">
+<!-- Header / Nav -->
+<div class="flex items-center justify-between p-6">
+<div class="flex items-center gap-2">
+<!-- Back button placeholder for iOS feel -->
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-surface-light dark:bg-surface-dark shadow-sm hover:bg-gray-100 dark:hover:bg-[#383722] transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="arrow_back">arrow_back</span>
+</button>
+</div>
+<!-- Help/Support icon -->
+<button class="text-sm font-medium text-[#1c1c0d]/70 dark:text-[#f2f2e6]/70">Help</button>
+</div>
+<!-- Main Content -->
+<div class="flex flex-1 flex-col px-6 pt-4 pb-8">
+<!-- Logo / Branding Area -->
+<div class="mb-10 flex flex-col items-center justify-center gap-6">
+<div class="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-primary shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-5xl text-black" data-icon="spa">spa</span>
+</div>
+<div class="text-center">
+<h1 class="text-3xl font-bold tracking-tight text-[#1c1c0d] dark:text-[#f2f2e6]">Landa</h1>
+<p class="text-sm font-medium text-[#1c1c0d]/60 dark:text-[#f2f2e6]/60 uppercase tracking-widest mt-1">Therapist Portal</p>
+</div>
+</div>
+<!-- Greeting -->
+<div class="mb-8 text-center">
+<h2 class="text-2xl font-bold leading-tight">Welcome back</h2>
+<p class="mt-2 text-[#1c1c0d]/60 dark:text-[#f2f2e6]/60">Login to manage your schedule &amp; earnings</p>
+</div>
+<!-- Login Form -->
+<form class="flex flex-col gap-5 w-full max-w-md mx-auto" onsubmit="event.preventDefault();">
+<!-- Email / Phone Input -->
+<div class="group relative">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 text-[#1c1c0d]/40 dark:text-[#f2f2e6]/40 flex items-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<input class="h-14 w-full rounded-full border-none bg-surface-light dark:bg-surface-dark pl-12 pr-4 text-base font-medium placeholder:text-[#1c1c0d]/30 dark:placeholder:text-[#f2f2e6]/30 focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark shadow-sm transition-all" placeholder="Email or Phone Number" type="text"/>
+</div>
+<!-- Password Input -->
+<div class="group relative">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 text-[#1c1c0d]/40 dark:text-[#f2f2e6]/40 flex items-center">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+</div>
+<input class="h-14 w-full rounded-full border-none bg-surface-light dark:bg-surface-dark pl-12 pr-12 text-base font-medium placeholder:text-[#1c1c0d]/30 dark:placeholder:text-[#f2f2e6]/30 focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark shadow-sm transition-all" placeholder="Password" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-[#1c1c0d]/40 dark:text-[#f2f2e6]/40 hover:text-[#1c1c0d] dark:hover:text-white transition-colors flex items-center p-1" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+<!-- Forgot Password -->
+<div class="flex justify-end">
+<a class="text-sm font-medium text-[#1c1c0d]/70 dark:text-[#f2f2e6]/70 hover:text-[#1c1c0d] dark:hover:text-white transition-colors" href="#">
+                        Forgot Password?
+                    </a>
+</div>
+<!-- Primary Action Button -->
+<button class="mt-4 flex h-14 w-full items-center justify-center rounded-full bg-primary text-black font-bold text-lg shadow-lg shadow-primary/20 hover:bg-[#e6e205] active:scale-[0.98] transition-all" type="submit">
+                    Log In
+                </button>
+</form>
+<!-- Divider -->
+<div class="my-8 flex w-full items-center gap-4 max-w-md mx-auto">
+<div class="h-px flex-1 bg-[#1c1c0d]/10 dark:bg-[#f2f2e6]/10"></div>
+<span class="text-xs font-medium text-[#1c1c0d]/40 dark:text-[#f2f2e6]/40 uppercase tracking-wider">Or continue with</span>
+<div class="h-px flex-1 bg-[#1c1c0d]/10 dark:bg-[#f2f2e6]/10"></div>
+</div>
+<!-- Social Login -->
+<div class="flex justify-center gap-4 mb-auto">
+<button class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-light dark:bg-surface-dark shadow-sm border border-[#1c1c0d]/5 dark:border-[#f2f2e6]/10 hover:bg-gray-50 dark:hover:bg-[#383722] transition-colors">
+<div class="h-6 w-6 bg-contain bg-center bg-no-repeat" data-alt="Google logo icon" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBbKfgSh1CZybPyNawsfuF10DcA-Ogm-ctBz9wQM_qPsy_3TygTGGsZJ-9ubBKZlJAUWIQrCTcJYf_Yc_iTzE7IcRni571ttQpZOE58DLPtekiyEbGYDSpDl6R6xXu__k0tquqtooqlUPFgCOCSdNGfICS3wqyA5aBhwwDyGkDhNpfkVc-qtUu9f8WlqHl1VstuBoWwWOsH5jovkYmPvF4ri1-Y94E88dT-bOiJwiEIz8dXlHyNVN3myxdvB8ddbVcsx6MQSqAdkQ4")'></div>
+</button>
+<button class="flex h-14 w-14 items-center justify-center rounded-full bg-surface-light dark:bg-surface-dark shadow-sm border border-[#1c1c0d]/5 dark:border-[#f2f2e6]/10 hover:bg-gray-50 dark:hover:bg-[#383722] transition-colors">
+<span class="material-symbols-outlined text-2xl" data-icon="apple">ios</span> <!-- Using material symbol as generic apple placeholder since fontawesome isnt loaded -->
+</button>
+</div>
+<!-- Footer / Register -->
+<div class="mt-8 text-center pb-4">
+<p class="text-sm text-[#1c1c0d]/60 dark:text-[#f2f2e6]/60">
+                    Don't have an account? 
+                    <a class="font-bold text-[#1c1c0d] dark:text-[#f2f2e6] hover:underline decoration-primary decoration-2 underline-offset-2" href="#">Apply to join</a>
+</p>
+</div>
+</div>
+</div>
+</body></html>

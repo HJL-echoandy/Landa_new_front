@@ -10,6 +10,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/store';
 import RootNavigator from './src/navigation';
+import { navigationRef } from './src/navigation/navigationRef';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function App() {
@@ -24,7 +25,7 @@ export default function App() {
         persistor={persistor}
       >
         <SafeAreaProvider>
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef}>
             <RootNavigator />
             <StatusBar style="auto" />
           </NavigationContainer>

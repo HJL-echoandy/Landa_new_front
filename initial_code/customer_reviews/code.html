@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer Reviews</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f4d125",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#221f10",
+                        "text-primary": "#1c190d",
+                        "text-secondary": "#9c8e49",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>.hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-100 dark:bg-gray-900 flex justify-center min-h-screen">
+<div class="relative flex h-full min-h-screen w-full max-w-md flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden shadow-2xl font-display">
+<div class="sticky top-0 z-20 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-gray-100 dark:border-gray-800">
+<div class="text-text-primary dark:text-white flex size-12 shrink-0 items-center justify-start cursor-pointer transition-colors hover:text-primary">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</div>
+<h2 class="text-text-primary dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">Customer Reviews</h2>
+</div>
+<div class="flex-1 overflow-y-auto pb-6">
+<div class="flex flex-col gap-6 p-5">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-col gap-1 items-start">
+<p class="text-text-primary dark:text-white text-5xl font-black leading-tight tracking-[-0.033em]">4.8</p>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px]">star_half</span>
+</div>
+<p class="text-text-secondary dark:text-gray-400 text-sm font-medium mt-1">Based on 124 reviews</p>
+</div>
+<div class="flex-1 min-w-[160px] max-w-[220px] grid grid-cols-[12px_1fr_30px] items-center gap-x-3 gap-y-2">
+<p class="text-text-primary dark:text-gray-300 text-xs font-medium">5</p>
+<div class="flex h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8e4ce] dark:bg-gray-700">
+<div class="rounded-full bg-primary" style="width: 80%;"></div>
+</div>
+<p class="text-text-secondary dark:text-gray-500 text-xs text-right">80%</p>
+<p class="text-text-primary dark:text-gray-300 text-xs font-medium">4</p>
+<div class="flex h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8e4ce] dark:bg-gray-700">
+<div class="rounded-full bg-primary" style="width: 12%;"></div>
+</div>
+<p class="text-text-secondary dark:text-gray-500 text-xs text-right">12%</p>
+<p class="text-text-primary dark:text-gray-300 text-xs font-medium">3</p>
+<div class="flex h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8e4ce] dark:bg-gray-700">
+<div class="rounded-full bg-primary" style="width: 5%;"></div>
+</div>
+<p class="text-text-secondary dark:text-gray-500 text-xs text-right">5%</p>
+<p class="text-text-primary dark:text-gray-300 text-xs font-medium">2</p>
+<div class="flex h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8e4ce] dark:bg-gray-700">
+<div class="rounded-full bg-primary" style="width: 1%;"></div>
+</div>
+<p class="text-text-secondary dark:text-gray-500 text-xs text-right">1%</p>
+<p class="text-text-primary dark:text-gray-300 text-xs font-medium">1</p>
+<div class="flex h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8e4ce] dark:bg-gray-700">
+<div class="rounded-full bg-primary" style="width: 2%;"></div>
+</div>
+<p class="text-text-secondary dark:text-gray-500 text-xs text-right">2%</p>
+</div>
+</div>
+</div>
+<div class="sticky top-[60px] z-10 bg-background-light dark:bg-background-dark/95 backdrop-blur-sm pb-2 pt-1 border-b border-transparent dark:border-gray-800 transition-all">
+<div class="flex gap-3 px-5 py-2 overflow-x-auto hide-scrollbar">
+<button class="group flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary pl-5 pr-5 shadow-sm transition-transform active:scale-95">
+<p class="text-text-primary font-bold text-sm leading-normal">Most Recent</p>
+</button>
+<button class="group flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-gray-800 border border-[#e8e4ce] dark:border-gray-700 pl-5 pr-5 transition-transform active:scale-95 hover:bg-gray-50 dark:hover:bg-gray-700">
+<p class="text-text-primary dark:text-gray-300 text-sm font-medium leading-normal">Highest Rated</p>
+</button>
+<button class="group flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-gray-800 border border-[#e8e4ce] dark:border-gray-700 pl-5 pr-5 transition-transform active:scale-95 hover:bg-gray-50 dark:hover:bg-gray-700">
+<p class="text-text-primary dark:text-gray-300 text-sm font-medium leading-normal">Lowest Rated</p>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-6 px-5 py-4">
+<div class="flex flex-col gap-3 bg-white dark:bg-[#2c2815] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-shadow hover:shadow-md">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-11 ring-2 ring-background-light dark:ring-gray-700" data-alt="Portrait of Sarah M, a happy customer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD50Zq11K0mmcrOQLNo8medTINjc94N4XLgA7EfR4Ss3cHUqebU_1ZvlgUl-9y0HeGOtU9wMdcSF-x0FR-JNGYcQ2ETtW42ZgT-Q9aIe9wsNT1XUvCEH8G2rsV8qV76P6vIDxlZ_bqPbyJ3DeWwEh6WKHhZPxkMKfAl-Eg8TvFPUQoe95AVSbRX3IkqkLdYmm2czfnV616HKOqeVpsV6sGoTuCDWb7GKejp5nw9rV_sKANQjHMy_ISsmiQT5IVxMI00dM885J8M5FM");'></div>
+<div>
+<p class="text-text-primary dark:text-white text-base font-bold leading-tight">Sarah M.</p>
+<p class="text-text-secondary dark:text-gray-400 text-xs font-normal mt-0.5">2 days ago</p>
+</div>
+</div>
+<div class="flex bg-background-light dark:bg-gray-800 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-primary text-[18px] fill-current">star</span>
+<span class="text-text-primary dark:text-white text-sm font-bold ml-1">5.0</span>
+</div>
+</div>
+<p class="text-text-primary dark:text-gray-200 text-sm leading-relaxed">The massage was incredible. She really focused on the areas I mentioned. Highly recommend!</p>
+<div class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100 dark:border-gray-700/50">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-text-secondary dark:text-gray-400 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-[18px] group-hover:fill-current">thumb_up</span>
+<span class="text-xs font-medium">12</span>
+</button>
+</div>
+<button class="text-primary text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors">
+                            Reply
+                        </button>
+</div>
+</div>
+<div class="flex flex-col gap-3 bg-white dark:bg-[#2c2815] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-shadow hover:shadow-md">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-11 ring-2 ring-background-light dark:ring-gray-700" data-alt="Portrait of John D, a satisfied client" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPxp20IvHfqXsVBsreEWsrUXEi0q-4ku72XibQB73hKBwh9MdvPpDjGlFk4BEDR5UfVz3GI2GdgcvInycGpFq99qmOz1ZUb3O1zj-B1kSLH_gHUoyBtyrMe9ZiroxQjJ-oPTtDSeex-WTh_jh2slihI0kDAGVpvywqT8E0VuYzxUCfDdxvRbUO7dZ2drXrBmrTedgwcMHnRNFKWx2Ze_yEAz-YyUN5-qU7mRK2McqeEmDpLn4mnImU8LVtOwX2ccw3qQkZsAlgcC8");'></div>
+<div>
+<p class="text-text-primary dark:text-white text-base font-bold leading-tight">John D.</p>
+<p class="text-text-secondary dark:text-gray-400 text-xs font-normal mt-0.5">1 week ago</p>
+</div>
+</div>
+<div class="flex bg-background-light dark:bg-gray-800 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-primary text-[18px] fill-current">star</span>
+<span class="text-text-primary dark:text-white text-sm font-bold ml-1">5.0</span>
+</div>
+</div>
+<p class="text-text-primary dark:text-gray-200 text-sm leading-relaxed">Professional and relaxing environment. Will definitely book again.</p>
+<div class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100 dark:border-gray-700/50">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-text-secondary dark:text-gray-400 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-[18px] group-hover:fill-current">thumb_up</span>
+<span class="text-xs font-medium">5</span>
+</button>
+</div>
+<button class="text-primary text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors">
+                            Reply
+                        </button>
+</div>
+</div>
+<div class="flex flex-col gap-3 bg-white dark:bg-[#2c2815] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-shadow hover:shadow-md">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-11 ring-2 ring-background-light dark:ring-gray-700" data-alt="Portrait of Emily R, giving feedback" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBZu9ivhSpLHP3JOSsM7mVKYH1Rr6F6Z4fiyyFCF3p9oUR66jsaClFrZf8fKMrB3WwgqCd6dzFiVd0XjCA0VJkU4PtFVWkdd6NXCxbllsxn28ryPPi2fueVsr5pYVDPrmmfzsEXK_nvKZPplWI8VWmy7xEJm4fcu0OqoVY4x6eOmDfiVNg_DP3gDuMfHqBduGtZTNve5GW-nGZ3mSCuSK4Jy4HjkHJZg0npr_3GLM01RaG2yEOyKKlJl1QVoYt1kGTqy8WEfDNWyfM");'></div>
+<div>
+<p class="text-text-primary dark:text-white text-base font-bold leading-tight">Emily R.</p>
+<p class="text-text-secondary dark:text-gray-400 text-xs font-normal mt-0.5">Oct 12, 2023</p>
+</div>
+</div>
+<div class="flex bg-background-light dark:bg-gray-800 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-primary text-[18px] fill-current">star</span>
+<span class="text-text-primary dark:text-white text-sm font-bold ml-1">4.0</span>
+</div>
+</div>
+<p class="text-text-primary dark:text-gray-200 text-sm leading-relaxed">Great technique, but the room was a little cold. Otherwise fantastic experience.</p>
+<div class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100 dark:border-gray-700/50">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-text-secondary dark:text-gray-400 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-[18px] group-hover:fill-current">thumb_up</span>
+<span class="text-xs font-medium">2</span>
+</button>
+<button class="flex items-center gap-1.5 text-text-secondary dark:text-gray-400 hover:text-red-500 transition-colors group">
+<span class="material-symbols-outlined text-[18px]">thumb_down</span>
+<span class="text-xs font-medium">1</span>
+</button>
+</div>
+<button class="text-primary text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors">
+                            Reply
+                        </button>
+</div>
+</div>
+<div class="flex flex-col gap-3 bg-white dark:bg-[#2c2815] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-shadow hover:shadow-md">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-11 ring-2 ring-background-light dark:ring-gray-700" data-alt="Portrait of Michael B, a regular client" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDb3_xdRpZosafSDLq9BXRRukbfGSP9AtXJX4ZUGdn1jGWp0VFp0u_yX3xjpK57WwHXsNohj6adj4oqUf_BN3kqFeU4iFaRO91tJf5M-Vzm3xTyb822P3KAq2JwI7cVrT-ho84P-I-24m5SjVOrCsPlPmBMlrHu01A27v8rIyQlS-Zsvhu5VDBkV8WEAjyDvF254VqNsyb-aaM0_C3re96EyDVQae7b1rRBPLO98kHro73EsBSo1uVxivW9hoRqaAzwfKcfM1qtgt4");'></div>
+<div>
+<p class="text-text-primary dark:text-white text-base font-bold leading-tight">Michael B.</p>
+<p class="text-text-secondary dark:text-gray-400 text-xs font-normal mt-0.5">Oct 10, 2023</p>
+</div>
+</div>
+<div class="flex bg-background-light dark:bg-gray-800 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-primary text-[18px] fill-current">star</span>
+<span class="text-text-primary dark:text-white text-sm font-bold ml-1">5.0</span>
+</div>
+</div>
+<p class="text-text-primary dark:text-gray-200 text-sm leading-relaxed">Simply the best massage in town. I've been coming here for months and it never disappoints.</p>
+<div class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100 dark:border-gray-700/50">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-text-secondary dark:text-gray-400 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-[18px] group-hover:fill-current">thumb_up</span>
+<span class="text-xs font-medium">8</span>
+</button>
+</div>
+<button class="text-primary text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors">
+                            Reply
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

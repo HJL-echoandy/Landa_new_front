@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Give Customer Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD500", 
+                        "primary-hover": "#F4CC00",
+                        "text-main": "#111827", 
+                        "text-secondary": "#6B7280",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        "glow": "0 0 20px rgba(255, 213, 0, 0.3)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+        .font-variation-settings-FILL-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-50 dark:bg-gray-900 font-display text-text-main dark:text-white min-h-screen flex flex-col items-center justify-center">
+<div class="relative w-full max-w-md mx-auto h-full min-h-screen flex flex-col bg-white dark:bg-gray-800 shadow-2xl overflow-hidden">
+<header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 sticky top-0 z-10">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-text-main dark:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<h2 class="text-lg font-bold leading-tight tracking-tight text-text-main dark:text-white">Rate Client</h2>
+<div class="w-10"></div> 
+</header>
+<main class="flex-1 overflow-y-auto px-6 pt-2 pb-24">
+<div class="flex flex-col items-center gap-4 mt-4 mb-8">
+<div class="relative group cursor-pointer">
+<div class="w-24 h-24 rounded-full bg-cover bg-center border-4 border-gray-50 dark:border-gray-700 shadow-sm" data-alt="Portrait of a smiling woman with light skin and dark hair" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC8vbEnNHEOKJlRgcp_eTnNMzGTVxMYjN-rb7YWxREYPiY8cKBfavJwoFjyaaHDyNmYohMJ5Z8bIMgUaOoC2QdEkeI42d1t8CzUFp5i5_IfWuX9IvwUCYZzm8d9tbwYH23-j3iPDmP3PpZaVYoVLRF6LfU9ADVVA3Z-wZfwtC2Y-RWx_zdi4ob5NeqfnN_81AvV8B5_kbWoQidZRvfCMclQq55Wa_khzANatYLrcqaPeZtzVgnclEbdFji9BBYf4VOvRb30WpH9dGY');">
+</div>
+<div class="absolute bottom-0 right-0 bg-primary w-8 h-8 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-sm">
+<span class="material-symbols-outlined text-black text-sm font-bold">check</span>
+</div>
+</div>
+<div class="text-center">
+<h1 class="text-2xl font-extrabold text-text-main dark:text-white tracking-tight">Sarah Jenkins</h1>
+<p class="text-sm text-text-secondary dark:text-gray-400 mt-1 font-medium">Massage Session • Today, 2:00 PM</p>
+</div>
+</div>
+<div class="text-center mb-8">
+<h2 class="text-xl font-bold text-text-main dark:text-white">How was your session?</h2>
+<p class="text-sm text-text-secondary dark:text-gray-400 mt-1">Your feedback helps us match you better.</p>
+</div>
+<div class="flex justify-center gap-2 mb-10">
+<button class="group p-1 focus:outline-none transition-transform active:scale-90">
+<span class="material-symbols-outlined text-primary text-[42px] filled font-variation-settings-FILL-1 drop-shadow-sm">star</span>
+</button>
+<button class="group p-1 focus:outline-none transition-transform active:scale-90">
+<span class="material-symbols-outlined text-primary text-[42px] filled font-variation-settings-FILL-1 drop-shadow-sm">star</span>
+</button>
+<button class="group p-1 focus:outline-none transition-transform active:scale-90">
+<span class="material-symbols-outlined text-primary text-[42px] filled font-variation-settings-FILL-1 drop-shadow-sm">star</span>
+</button>
+<button class="group p-1 focus:outline-none transition-transform active:scale-90">
+<span class="material-symbols-outlined text-primary text-[42px] filled font-variation-settings-FILL-1 drop-shadow-sm">star</span>
+</button>
+<button class="group p-1 focus:outline-none transition-transform active:scale-90">
+<span class="material-symbols-outlined text-gray-200 dark:text-gray-600 text-[42px]">star</span>
+</button>
+</div>
+<div class="mb-10">
+<p class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4 ml-1">Quick Tags</p>
+<div class="flex flex-wrap gap-3">
+<button class="flex items-center justify-center px-4 py-2.5 rounded-xl bg-yellow-50 border border-primary text-gray-900 font-semibold text-sm transition-colors shadow-sm">
+                        On Time
+                    </button>
+<button class="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-white/5 text-text-secondary dark:text-gray-300 font-medium text-sm transition-colors hover:bg-gray-100 dark:hover:bg-white/10 border border-transparent">
+                        Polite
+                    </button>
+<button class="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-white/5 text-text-secondary dark:text-gray-300 font-medium text-sm transition-colors hover:bg-gray-100 dark:hover:bg-white/10 border border-transparent">
+                        Generous Tip
+                    </button>
+<button class="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-white/5 text-text-secondary dark:text-gray-300 font-medium text-sm transition-colors hover:bg-gray-100 dark:hover:bg-white/10 border border-transparent">
+                        Friendly
+                    </button>
+<button class="flex items-center justify-center px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-white/5 text-text-secondary dark:text-gray-300 font-medium text-sm transition-colors hover:bg-gray-100 dark:hover:bg-white/10 border border-transparent">
+                        Clean Space
+                    </button>
+</div>
+</div>
+<div class="relative">
+<label class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3 ml-1 block" for="comment">Private Note</label>
+<textarea class="w-full bg-gray-50 dark:bg-black/20 border-0 ring-1 ring-gray-100 dark:ring-gray-700 rounded-2xl p-4 text-text-main dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-black/40 transition-all resize-none shadow-inner" id="comment" placeholder="Any additional notes on this client? (Visible only to admins)" rows="4"></textarea>
+<div class="flex items-center gap-1.5 mt-3 ml-1">
+<span class="material-symbols-outlined text-gray-400 text-[16px]">lock</span>
+<span class="text-xs text-gray-400 font-medium">This feedback is private and anonymous.</span>
+</div>
+</div>
+</main>
+<div class="fixed bottom-0 w-full max-w-md bg-white dark:bg-gray-800 p-4 border-t border-gray-100 dark:border-gray-700 z-20">
+<button class="w-full bg-primary hover:bg-primary-hover text-black font-extrabold text-lg h-14 rounded-2xl shadow-glow transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+<span>Submit Feedback</span>
+<span class="material-symbols-outlined text-xl font-bold">arrow_forward</span>
+</button>
+</div>
+</div>
+
+</body></html>

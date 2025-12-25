@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Messages - Landa</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#facc15", // Changed to bright yellow (yellow-400)
+                        "primary-dark": "#eab308", // Darker yellow for text/accents (yellow-500)
+                        "background-light": "#f8f9fc",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>.hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased pb-24">
+<div class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800/50">
+<div class="flex items-center justify-between px-4 py-3">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Messages</h1>
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">edit_square</span>
+</button>
+</div>
+<div class="px-4 pb-3">
+<div class="relative flex items-center w-full h-11 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<div class="flex items-center justify-center pl-3 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined" style="font-size: 20px;">search</span>
+</div>
+<input class="w-full h-full bg-transparent border-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-0 text-base font-normal px-3" placeholder="Search messages, orders..." type="text"/>
+</div>
+</div>
+<div class="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar snap-x">
+<button class="snap-start shrink-0 flex items-center justify-center px-4 h-8 rounded-full bg-primary text-slate-900 text-sm font-medium transition-colors shadow-sm shadow-primary/30">
+                All
+            </button>
+<button class="snap-start shrink-0 flex items-center justify-center px-4 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                Unread <span class="ml-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-slate-800">3</span>
+</button>
+<button class="snap-start shrink-0 flex items-center justify-center px-4 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                Orders
+            </button>
+<button class="snap-start shrink-0 flex items-center justify-center px-4 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                System
+            </button>
+</div>
+</div>
+<div class="flex flex-col w-full h-full">
+<div class="mt-2">
+<div class="flex items-center gap-2 px-4 pb-2 pt-4">
+<span class="material-symbols-outlined text-primary-dark text-sm" style="font-size: 18px;">push_pin</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pinned</h3>
+</div>
+<div class="mx-4 mb-2">
+<div class="relative flex items-center gap-4 p-4 bg-gradient-to-r from-primary/10 to-transparent dark:from-primary/20 dark:to-transparent rounded-2xl border border-primary/20 dark:border-primary/20">
+<div class="relative flex items-center justify-center shrink-0 size-12 rounded-xl bg-white dark:bg-slate-800 text-primary-dark shadow-sm">
+<span class="material-symbols-outlined" style="font-size: 24px;">calendar_clock</span>
+<span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-center mb-0.5">
+<p class="text-slate-900 dark:text-white text-sm font-bold leading-normal truncate">Upcoming Appointment</p>
+<span class="text-primary-dark text-xs font-semibold whitespace-nowrap">In 1h</span>
+</div>
+<p class="text-slate-600 dark:text-slate-300 text-sm font-normal leading-normal line-clamp-1">Session with Mike T. starts soon.</p>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h3 class="px-4 pb-2 pt-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Today</h3>
+<div class="group mx-4 mb-3 cursor-pointer">
+<div class="flex items-start gap-3 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md hover:border-primary/30 transition-all">
+<div class="flex items-center justify-center shrink-0 size-12 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">New Order Request</p>
+<div class="flex items-center gap-2">
+<span class="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">2m ago</span>
+<div class="size-2.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<p class="text-slate-600 dark:text-slate-300 text-sm font-normal line-clamp-2">
+<span class="font-semibold text-slate-800 dark:text-slate-200">90min Deep Tissue</span> • 4.2 miles away • Downtown Area
+                        </p>
+<div class="mt-2 flex gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                $120.00
+                            </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                                Action Required
+                            </span>
+</div>
+</div>
+</div>
+</div>
+<div class="group mx-4 mb-3 cursor-pointer">
+<div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-all">
+<div class="relative shrink-0">
+<img alt="Portrait of Sarah J" class="size-12 rounded-full object-cover border-2 border-white dark:border-slate-700 shadow-sm" data-alt="Portrait of a smiling woman with reddish hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmDKumWVB-9klJLKI54og9vbqN7yjJ5d0utPe23mOsAjGLrkhXU7Xx3ExpdEpV5FiZDYoU3BWxCIR_btvZ1S7wrT9zDU0qiv_D0VrAu3G2V1Q5dulc_RBXh8u-sGDu7UU_ivkWkh4CgaSx4-RzhuM448ArCmjDuzA5MQLdM0jfTgHt55WYvSe7IFmJU51jzM2rNkzkBveU7pOMUOQP7ZKyY4PjOP0s2c-GpEhvFIMSfcXhDs03-kyjsiukVEVVe9AnnHl9Pdv8PzU"/>
+<div class="absolute bottom-0 right-0 size-3 rounded-full bg-green-500 border-2 border-white dark:border-slate-800"></div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">Sarah Jenkins</p>
+<div class="flex items-center gap-2">
+<span class="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">10:42 AM</span>
+<div class="size-2.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<p class="text-slate-600 dark:text-slate-300 text-sm font-normal line-clamp-1">Hi, is there parking available near the location?</p>
+</div>
+</div>
+</div>
+<div class="group mx-4 mb-3 cursor-pointer">
+<div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-all">
+<div class="relative shrink-0">
+<img alt="Portrait of David M" class="size-12 rounded-full object-cover border-2 border-white dark:border-slate-700 shadow-sm" data-alt="Portrait of a man with glasses smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxeGMpEnOVqMEeiINMe62CxYwiotbnP8Ec2AaK9QE3JqDjBYGWuD8I-5EeFRNCvT56a8TMoMEFJTOk_qcFsDn6eeBB5ddtW9PMsrwVnfopoASKF1xmsTYfX4mfYHAVS9lgA-sxWBHoq4XOIPGd4XDEVMcrrlYUCVq5LpBlYERG_c9pYtDslHR2oZCbvEvdBkko3986LpOc7YwuiKiH7728OHz7PtgulZKxRKbXF5yoD4rwfwqcgZEwc3rHkPCG5Y5FJNvlkE9hrDk"/>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">David Miller</p>
+<div class="flex items-center gap-2">
+<span class="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">9:15 AM</span>
+</div>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-normal line-clamp-1">Thanks for the great session yesterday!</p>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h3 class="px-4 pb-2 pt-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Yesterday</h3>
+<div class="group mx-4 mb-3 cursor-pointer">
+<div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-all">
+<div class="flex items-center justify-center shrink-0 size-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">Weekly Payout Processed</p>
+<span class="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">Yesterday</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-normal line-clamp-1">Your earnings of $840.00 have been sent to your bank.</p>
+</div>
+</div>
+</div>
+<div class="group mx-4 mb-3 cursor-pointer">
+<div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-all">
+<div class="flex items-center justify-center shrink-0 size-12 rounded-full bg-primary/20 text-primary-dark">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">Landa Support</p>
+<span class="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">Yesterday</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-normal line-clamp-1">Your updated profile photo has been approved.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center py-8 opacity-50">
+<p class="text-sm text-slate-400">No more messages</p>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-safe">
+<div class="flex justify-around items-center h-16">
+<button class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500 hover:text-primary-dark dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">list_alt</span>
+<span class="text-[10px] font-medium">Orders</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500 hover:text-primary-dark dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">calendar_month</span>
+<span class="text-[10px] font-medium">Schedules</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full gap-1 text-primary-dark dark:text-primary">
+<div class="relative">
+<span class="material-symbols-outlined text-2xl filled">chat_bubble</span>
+<span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+<span class="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+</span>
+</div>
+<span class="text-[10px] font-bold">Messages</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500 hover:text-primary-dark dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</div>
+
+</body></html>

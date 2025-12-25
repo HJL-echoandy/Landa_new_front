@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Client Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#23220f",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem", 
+                        "lg": "2rem", 
+                        "xl": "3rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col h-screen overflow-hidden bg-background-light dark:bg-background-dark font-display text-[#1c1c0d] dark:text-[#e6e6dc] antialiased">
+<!-- Header -->
+<header class="flex-none bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md z-10 sticky top-0 border-b border-[#e5e5e0] dark:border-[#3a3928]">
+<!-- Status Bar Safe Area Placeholder (Simulated) -->
+<div class="h-1 w-full"></div>
+<div class="flex items-center p-4 gap-3">
+<!-- Back Button -->
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors -ml-2">
+<span class="material-symbols-outlined text-[#1c1c0d] dark:text-white" style="font-size: 24px;">arrow_back_ios_new</span>
+</button>
+<!-- Avatar -->
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-white dark:ring-[#23220f]" data-alt="Portrait of a smiling young woman with short hair" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCpGT81RptJg002M2O6FHWfuulKNdsKbTlwHbKTxbPS48jYbM7H-sHYHLa5un4FDHfxZXuMVUjZO4ZLhPd7FtHAKZdJOhyudQqSxSyji6lB9VNyxi5p4lhYGFgXaPIKbzi4IHgsAW4X4Q2kBKEiSBuVpLUbWZ1D6AE35FoDE1jgEZTSYtEiPkxN3CaqqHrdnDulEo3VdPZPG74WXqMQdDP3yKnXdqICemKZ01diZuHKma31q3pphNZ0D31tXqcaeY_tPMsHxD3Bu9c");'>
+</div>
+<!-- Online Status Dot -->
+<div class="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full border-2 border-background-light dark:border-background-dark"></div>
+</div>
+<!-- Client Info -->
+<div class="flex-1 min-w-0 flex flex-col justify-center h-10">
+<h2 class="text-[#1c1c0d] dark:text-white text-base font-bold leading-tight truncate">Jane Doe</h2>
+<p class="text-[#888870] dark:text-[#a0a090] text-xs font-medium leading-tight truncate">Active now</p>
+</div>
+<!-- Call Button -->
+<button class="flex items-center justify-center size-10 rounded-full bg-[#f4f4e6] dark:bg-[#343321] text-[#1c1c0d] dark:text-white hover:bg-[#ebebda] dark:hover:bg-[#454430] transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">call</span>
+</button>
+</div>
+</header>
+<!-- Chat Area -->
+<main class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+<!-- Timestamp Divider -->
+<div class="flex justify-center py-2">
+<span class="text-[11px] font-medium text-[#9e9d47] dark:text-[#888860] bg-[#f4f4e6] dark:bg-[#343321] px-3 py-1 rounded-full">
+                Today, 10:23 AM
+            </span>
+</div>
+<!-- Incoming Message (Jane) -->
+<div class="flex items-end gap-3 group">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 shrink-0 mb-1" data-alt="Portrait of a smiling young woman" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDCa4kFtx-oyn2pEUcL33goNNRA530sk0GA8nSHmJ1FOPFL-Z2EVewK7pK0w8Lqv3_4lOu0a8PN8H1EXxowl6K5U9oh5_JqPM06X-HSztpBMfnx6zNgXmkZidH5X-zt5t4TvUwlrZUHW5tmZmuuRojdeZJ3o-PcpwflVcK-oHMJaOIKN0tHyTvQ222ZBOGv-zswTFqMJ3TCl_7XqQylBzmWYRt7bHsHuCbYs9GhZ1m978xFmdGYqN0iFOp6TBSoEX6GuguzUb4vWZo");'>
+</div>
+<div class="flex flex-col gap-1 max-w-[75%] items-start">
+<div class="relative px-5 py-3 bg-white dark:bg-[#343321] rounded-2xl rounded-bl-none shadow-sm dark:shadow-none text-[#1c1c0d] dark:text-[#f0f0e8] text-[15px] leading-relaxed">
+<p>Hi! I need to reschedule our 3 PM appointment.</p>
+</div>
+<span class="text-[11px] text-[#9e9d47] dark:text-[#777760] ml-1">10:23 AM</span>
+</div>
+</div>
+<!-- Outgoing Message (Me) -->
+<div class="flex items-end gap-3 justify-end">
+<div class="flex flex-col gap-1 max-w-[75%] items-end">
+<div class="relative px-5 py-3 bg-primary text-[#1c1c0d] rounded-2xl rounded-br-none shadow-sm text-[15px] leading-relaxed font-medium">
+<p>No problem, Jane. What time works best for you?</p>
+</div>
+<div class="flex items-center gap-1 mr-1">
+<span class="text-[11px] text-[#9e9d47] dark:text-[#777760]">10:25 AM</span>
+<span class="material-symbols-outlined text-[#9e9d47] dark:text-[#777760]" style="font-size: 14px;">done_all</span>
+</div>
+</div>
+</div>
+<!-- Incoming Message (Jane) -->
+<div class="flex items-end gap-3 group">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 shrink-0 mb-1" data-alt="Portrait of a smiling young woman" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUKjv18iILCcPhItJLjAvK7tQ-Mw_2uKul5YN1lJWgGMbLRT67Z4yBR5lpATaCrMGWGfugs4wmyU9XPjcnyHr2enD48lBitb2Zr8F6hFvV6K0SqtuL5XAzBsVqvF_00az2nXfQ9qSs9HXNxtKIjVSQO9oywjauFwZZ-eJRi_9LdrgCAFJXbKYGmr-LyU8gQ0MBCSoNtItWQ3BVFo168cS1p7WH4TWbcLNCFgRUldXRXzr8SecaGclWdqlApdMxTFa_a6nBQZQ2Fes");'>
+</div>
+<div class="flex flex-col gap-1 max-w-[75%] items-start">
+<div class="relative px-5 py-3 bg-white dark:bg-[#343321] rounded-2xl rounded-bl-none shadow-sm dark:shadow-none text-[#1c1c0d] dark:text-[#f0f0e8] text-[15px] leading-relaxed">
+<p>Is 5 PM available?</p>
+</div>
+<span class="text-[11px] text-[#9e9d47] dark:text-[#777760] ml-1">10:28 AM</span>
+</div>
+</div>
+<!-- Spacer for visual breathing room at bottom -->
+<div class="h-2"></div>
+</main>
+<!-- Composer (Input Area) -->
+<footer class="flex-none p-4 pb-6 bg-background-light dark:bg-background-dark @container">
+<form class="flex items-end gap-2 w-full" onsubmit="event.preventDefault();">
+<!-- Attachment Button -->
+<button class="shrink-0 size-10 flex items-center justify-center rounded-full text-[#9e9d47] dark:text-[#a0a090] hover:bg-[#f4f4e6] dark:hover:bg-[#343321] transition-colors" type="button">
+<span class="material-symbols-outlined" style="font-size: 24px;">add_circle</span>
+</button>
+<!-- Input Wrapper -->
+<div class="flex-1 flex items-center gap-2 bg-[#f4f4e6] dark:bg-[#343321] rounded-full min-h-[48px] px-2 transition-shadow focus-within:ring-2 focus-within:ring-primary/50">
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-[#1c1c0d] dark:text-white placeholder:text-[#9e9d47] dark:placeholder:text-[#666650] text-base px-4 py-3" placeholder="Message..." type="text"/>
+<button class="shrink-0 size-9 flex items-center justify-center rounded-full text-[#9e9d47] dark:text-[#a0a090] hover:text-[#1c1c0d] dark:hover:text-white transition-colors" type="button">
+<span class="material-symbols-outlined" style="font-size: 20px;">sentiment_satisfied</span>
+</button>
+</div>
+<!-- Send Button -->
+<button class="shrink-0 size-12 flex items-center justify-center rounded-full bg-primary hover:bg-[#e6e205] text-[#1c1c0d] shadow-sm transition-transform active:scale-95" type="submit">
+<span class="material-symbols-outlined" style="font-size: 20px; font-weight: 600;">arrow_upward</span>
+</button>
+</form>
+<!-- Home Indicator Safe Area (Simulated) -->
+<div class="h-1"></div>
+</footer>
+</body></html>

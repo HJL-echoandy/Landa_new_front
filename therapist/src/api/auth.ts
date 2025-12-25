@@ -29,7 +29,7 @@ export const register = async (data: RegisterRequest): Promise<{ message: string
  * 发送验证码
  */
 export const sendVerificationCode = async (data: VerificationCodeRequest): Promise<{ message: string }> => {
-  return request.post('/therapist/auth/verification-code', data);
+  return request.post('/therapist/auth/send-code', data);
 };
 
 /**

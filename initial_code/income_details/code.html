@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Income Details - Landa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2e22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-neutral-900 dark:text-neutral-100 font-display transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-2xl">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md">
+<button class="flex h-10 w-10 items-center justify-center rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors text-neutral-900 dark:text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold leading-tight tracking-tight text-neutral-900 dark:text-white">Income Details</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="flex-1 flex flex-col gap-6 p-4">
+<!-- Stats Card -->
+<section class="relative overflow-hidden rounded-2xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-neutral-100 dark:border-neutral-800">
+<div class="relative z-10 flex flex-col gap-1">
+<p class="text-sm font-medium text-neutral-500 dark:text-neutral-400">Total Income</p>
+<div class="flex items-baseline gap-2">
+<h2 class="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">$1,240.50</h2>
+</div>
+<div class="mt-2 flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-primary">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span>+12% this week</span>
+</div>
+</div>
+<!-- Decorative background elements -->
+<div class="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary/10 blur-2xl"></div>
+<div class="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-primary/10 blur-xl"></div>
+</section>
+<!-- Segmented Buttons (Filters) -->
+<section>
+<div class="flex p-1 rounded-xl bg-neutral-200/60 dark:bg-neutral-800/60">
+<label class="flex-1 cursor-pointer">
+<input class="peer sr-only" name="period" type="radio" value="daily"/>
+<div class="flex h-9 items-center justify-center rounded-lg text-sm font-medium text-neutral-500 transition-all peer-checked:bg-white peer-checked:text-neutral-900 peer-checked:shadow-sm dark:text-neutral-400 dark:peer-checked:bg-surface-dark dark:peer-checked:text-white">
+                            Daily
+                        </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input checked="" class="peer sr-only" name="period" type="radio" value="weekly"/>
+<div class="flex h-9 items-center justify-center rounded-lg text-sm font-medium text-neutral-500 transition-all peer-checked:bg-primary peer-checked:text-background-dark peer-checked:font-semibold peer-checked:shadow-sm dark:text-neutral-400 dark:peer-checked:bg-primary dark:peer-checked:text-background-dark">
+                            Weekly
+                        </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="peer sr-only" name="period" type="radio" value="monthly"/>
+<div class="flex h-9 items-center justify-center rounded-lg text-sm font-medium text-neutral-500 transition-all peer-checked:bg-white peer-checked:text-neutral-900 peer-checked:shadow-sm dark:text-neutral-400 dark:peer-checked:bg-surface-dark dark:peer-checked:text-white">
+                            Monthly
+                        </div>
+</label>
+</div>
+</section>
+<!-- Transaction List -->
+<section class="flex flex-col gap-2">
+<div class="flex items-center justify-between px-1 pb-2">
+<h3 class="text-base font-bold text-neutral-900 dark:text-white">Recent Transactions</h3>
+<button class="text-sm font-medium text-emerald-600 dark:text-primary">View All</button>
+</div>
+<!-- List Item 1 -->
+<div class="group flex items-center justify-between gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80 border border-transparent dark:border-neutral-800/50">
+<div class="flex items-center gap-4">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 text-emerald-700 dark:text-primary">
+<span class="material-symbols-outlined">spa</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold text-neutral-900 dark:text-white leading-tight">Swedish Massage (60m)</p>
+<p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-1">Jul 12 • #ORD-8821</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-base font-bold text-emerald-600 dark:text-primary">+$85.00</p>
+</div>
+</div>
+<!-- List Item 2 -->
+<div class="group flex items-center justify-between gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80 border border-transparent dark:border-neutral-800/50">
+<div class="flex items-center gap-4">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 text-emerald-700 dark:text-primary">
+<span class="material-symbols-outlined">self_improvement</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold text-neutral-900 dark:text-white leading-tight">Deep Tissue (90m)</p>
+<p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-1">Jul 11 • #ORD-8819</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-base font-bold text-emerald-600 dark:text-primary">+$120.00</p>
+</div>
+</div>
+<!-- List Item 3 -->
+<div class="group flex items-center justify-between gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80 border border-transparent dark:border-neutral-800/50">
+<div class="flex items-center gap-4">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 text-emerald-700 dark:text-primary">
+<span class="material-symbols-outlined">hot_tub</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold text-neutral-900 dark:text-white leading-tight">Hot Stone Therapy</p>
+<p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-1">Jul 10 • #ORD-8742</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-base font-bold text-emerald-600 dark:text-primary">+$150.00</p>
+</div>
+</div>
+<!-- List Item 4 -->
+<div class="group flex items-center justify-between gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80 border border-transparent dark:border-neutral-800/50">
+<div class="flex items-center gap-4">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 text-emerald-700 dark:text-primary">
+<span class="material-symbols-outlined">local_taxi</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold text-neutral-900 dark:text-white leading-tight">Travel Fee</p>
+<p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-1">Jul 10 • #ORD-8742</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-base font-bold text-emerald-600 dark:text-primary">+$25.00</p>
+</div>
+</div>
+<!-- List Item 5 -->
+<div class="group flex items-center justify-between gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80 border border-transparent dark:border-neutral-800/50">
+<div class="flex items-center gap-4">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 text-emerald-700 dark:text-primary">
+<span class="material-symbols-outlined">redeem</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-semibold text-neutral-900 dark:text-white leading-tight">Tip</p>
+<p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-1">Jul 10 • #ORD-8742</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-base font-bold text-emerald-600 dark:text-primary">+$30.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom padding for scroll -->
+<div class="h-6"></div>
+</div>
+</body></html>

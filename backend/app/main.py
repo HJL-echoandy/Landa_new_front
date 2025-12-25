@@ -76,7 +76,7 @@ async def health_check():
 async def root():
     """根路径"""
     return {
-        "message": f"Welcome to {settings.APP_NAME}",
+        "message": f"Welcome to {settings.APP_NAME}!!!!",
         "version": settings.APP_VERSION,
         "docs": "/docs" if settings.DEBUG else "Disabled in production"
     }

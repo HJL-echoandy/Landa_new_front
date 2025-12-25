@@ -1,7 +1,9 @@
 """
-Alembic 环境配置
+Alembic environment configuration
 """
 import asyncio
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -10,32 +12,43 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# 导入配置和模型
+# Add project root to Python path
+# This allows importing 'app' module
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import configuration and models
 from app.core.config import settings
 from app.core.database import Base
 
-# 导入所有模型以确保它们被注册
+# Import all models to ensure they are registered
 from app.models import *  # noqa
 
-# Alembic Config 对象
+# Alembic Config object
 config = context.config
 
-# 设置数据库 URL
+# Set database URL from settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
-# 设置日志
+# Setup logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 目标元数据
+# Target metadata for autogenerate
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     """
-    离线模式运行迁移
+    Run migrations in 'offline' mode.
     
-    只生成 SQL 脚本，不实际连接数据库
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well. By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+    
+    Calls to context.execute() here emit the given string to the
+    script output.
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -50,7 +63,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    """执行迁移"""
+    """Execute migrations in the context"""
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
@@ -58,7 +71,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """异步运行迁移"""
+    """Run migrations in async mode"""
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -73,9 +86,10 @@ async def run_async_migrations() -> None:
 
 def run_migrations_online() -> None:
     """
-    在线模式运行迁移
+    Run migrations in 'online' mode.
     
-    连接到数据库并执行迁移
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
     """
     asyncio.run(run_async_migrations())
 

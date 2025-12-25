@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Income Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD600",
+                        "primary-dark": "#E6C200",
+                        "background-light": "#FFFFFF",
+                        "background-dark": "#000000",
+                        "surface-dark": "#1C1C1E", 
+                        "surface-card": "#2C2C2E",
+                        "gray": {
+                            50: "#F9FAFB",
+                            100: "#F3F4F6",
+                            200: "#E5E7EB",
+                            300: "#D1D5DB",
+                            400: "#9CA3AF",
+                            500: "#6B7280",
+                            600: "#4B5563",
+                            700: "#374151",
+                            800: "#1F2937",
+                            900: "#111827",
+                        }
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-white selection:bg-primary selection:text-black">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto overflow-hidden bg-background-light dark:bg-background-dark shadow-2xl">
+<header class="flex items-center justify-between p-4 pb-2 sticky top-0 z-10 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-surface-card overflow-hidden border border-gray-200 dark:border-white/10">
+<img alt="Female therapist profile portrait" class="w-full h-full object-cover" data-alt="Female therapist profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsqNskWzXKDs0_TDyqnJPTWL95SrQpFsvYFLRbcy-4zfczeXP2iDZvUFR04oFGlLXE_wgkwrTy0H49GqcjhOU5MUouVHHmbCV634QAf2Vs_6O7Zuxnz5vSh6F9KsJUCMVXQZS9oLiwXKOPrXWoyv46qx5b4X_02pJGFvpVyLU564T5DsvXxtatrQ5_LuxjircqxhnzAfzhGBEWTtgXzYlz1bWB4gynxz9nkSIzuOb3IFwcovNk0PTJstQXjtSKg_e-223WLeb9uBY"/>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center text-gray-900 dark:text-white">收入概览</h2>
+<div class="flex size-10 items-center justify-end">
+<button class="flex items-center justify-center rounded-full size-10 text-gray-400 dark:text-gray-400 hover:text-gray-900 dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto pb-24 px-4">
+<div class="mt-2 mb-6">
+<div class="flex h-12 w-full items-center justify-center rounded-xl bg-gray-100 dark:bg-surface-card p-1">
+<label class="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-primary dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm transition-all duration-200">
+<span class="truncate text-sm font-bold text-gray-500 dark:text-gray-400 group-has-[:checked]:text-black dark:group-has-[:checked]:text-black transition-colors">今日</span>
+<input checked="" class="invisible w-0 fixed" name="period-selector" type="radio" value="today"/>
+</label>
+<label class="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-primary dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm transition-all duration-200">
+<span class="truncate text-sm font-bold text-gray-500 dark:text-gray-400 group-has-[:checked]:text-black dark:group-has-[:checked]:text-black transition-colors">本周</span>
+<input class="invisible w-0 fixed" name="period-selector" type="radio" value="week"/>
+</label>
+<label class="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-primary dark:has-[:checked]:bg-primary has-[:checked]:shadow-sm transition-all duration-200">
+<span class="truncate text-sm font-bold text-gray-500 dark:text-gray-400 group-has-[:checked]:text-black dark:group-has-[:checked]:text-black transition-colors">本月</span>
+<input class="invisible w-0 fixed" name="period-selector" type="radio" value="month"/>
+</label>
+</div>
+</div>
+<div class="flex flex-col items-center mb-8">
+<div class="flex items-center gap-2 mb-1">
+<p class="text-gray-500 dark:text-gray-400 text-sm font-medium">今日总收入</p>
+<button class="text-gray-400 hover:text-gray-900 transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+<h1 class="text-gray-900 dark:text-primary tracking-tight text-[40px] font-extrabold leading-tight">¥ 1,280.00</h1>
+</div>
+<div class="grid grid-cols-2 gap-3 mb-8">
+<div class="flex flex-col gap-1 rounded-2xl bg-white dark:bg-surface-card border border-gray-100 dark:border-white/5 p-4 items-center text-center shadow-sm">
+<div class="size-8 rounded-full bg-yellow-50 dark:bg-primary/20 flex items-center justify-center mb-1 text-yellow-600 dark:text-primary">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+</div>
+<p class="text-gray-900 dark:text-white text-2xl font-bold leading-tight">5</p>
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium">完成订单</p>
+</div>
+<div class="flex flex-col gap-1 rounded-2xl bg-white dark:bg-surface-card border border-gray-100 dark:border-white/5 p-4 items-center text-center shadow-sm">
+<div class="size-8 rounded-full bg-gray-50 dark:bg-white/10 flex items-center justify-center mb-1 text-gray-600 dark:text-white">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<p class="text-gray-900 dark:text-white text-2xl font-bold leading-tight">3h 40m</p>
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium">工作时长</p>
+</div>
+</div>
+<div class="rounded-3xl bg-white dark:bg-surface-card border border-gray-100 dark:border-white/5 p-5 mb-6 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-gray-900 dark:text-white font-bold text-base">收入趋势</h3>
+<span class="text-xs font-medium text-gray-400 bg-gray-50 dark:bg-white/5 px-2 py-1 rounded-md">24小时</span>
+</div>
+<div class="h-40 flex items-end justify-between gap-2 px-1">
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="w-full bg-gray-100 dark:bg-white/10 rounded-t-sm group-hover:bg-primary/50 transition-all h-[20%]"></div>
+<span class="text-[10px] text-gray-400 font-medium">10</span>
+</div>
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="w-full bg-gray-100 dark:bg-white/10 rounded-t-sm group-hover:bg-primary/50 transition-all h-[45%]"></div>
+<span class="text-[10px] text-gray-400 font-medium">12</span>
+</div>
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="absolute -top-8 bg-gray-900 dark:bg-primary text-white dark:text-black text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">¥480</div>
+<div class="w-full bg-primary rounded-t-sm transition-all h-[85%] shadow-[0_0_15px_rgba(255,214,0,0.4)]"></div>
+<span class="text-[10px] text-gray-900 dark:text-white font-bold">14</span>
+</div>
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="w-full bg-gray-100 dark:bg-white/10 rounded-t-sm group-hover:bg-primary/50 transition-all h-[30%]"></div>
+<span class="text-[10px] text-gray-400 font-medium">16</span>
+</div>
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="w-full bg-gray-100 dark:bg-white/10 rounded-t-sm group-hover:bg-primary/50 transition-all h-[60%]"></div>
+<span class="text-[10px] text-gray-400 font-medium">18</span>
+</div>
+<div class="group relative flex flex-col items-center justify-end w-full h-full gap-2">
+<div class="w-full bg-gray-100 dark:bg-white/10 rounded-t-sm group-hover:bg-primary/50 transition-all h-[15%]"></div>
+<span class="text-[10px] text-gray-400 font-medium">20</span>
+</div>
+</div>
+</div>
+<div class="mb-8">
+<h3 class="text-gray-900 dark:text-white font-bold text-base mb-3 px-1">历史数据</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-surface-card border border-gray-100 dark:border-white/5 shadow-sm hover:border-primary/50 transition-colors cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-400 group-hover:text-primary-dark dark:group-hover:text-primary">calendar_view_week</span>
+</div>
+<div>
+<p class="text-gray-900 dark:text-white font-bold text-sm">本周收入</p>
+<p class="text-gray-500 dark:text-gray-400 text-xs">12月4日 - 12月10日</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-gray-900 dark:text-white font-bold">¥ 5,400.00</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-surface-card border border-gray-100 dark:border-white/5 shadow-sm hover:border-primary/50 transition-colors cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-400 group-hover:text-primary-dark dark:group-hover:text-primary">calendar_month</span>
+</div>
+<div>
+<p class="text-gray-900 dark:text-white font-bold text-sm">本月收入</p>
+<p class="text-gray-500 dark:text-gray-400 text-xs">2023年 12月</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-gray-900 dark:text-white font-bold">¥ 21,350.00</p>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-gray-900 font-bold py-4 rounded-2xl active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
+<span>查看收入明细</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</main>
+<nav class="fixed bottom-0 w-full max-w-md bg-white/95 dark:bg-surface-card/90 backdrop-blur-lg border-t border-gray-100 dark:border-white/5 pb-safe pt-2 px-6">
+<div class="flex justify-between items-center h-16">
+<a class="flex flex-col items-center justify-center gap-1 w-16 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">home</span>
+<span class="text-[10px] font-medium">首页</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 w-16 text-gray-900 dark:text-primary relative" href="#">
+<div class="absolute -top-10 size-12 bg-primary rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(255,214,0,0.4)] border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-black text-[24px]">account_balance_wallet</span>
+</div>
+<span class="material-symbols-outlined text-[26px] opacity-0">account_balance_wallet</span> 
+<span class="text-[10px] font-bold mt-2">收入</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 w-16 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">person</span>
+<span class="text-[10px] font-medium">我的</span>
+</a>
+</div>
+</nav>
+</div>
+
+</body></html>

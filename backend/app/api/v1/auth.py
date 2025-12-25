@@ -110,7 +110,7 @@ async def login(
     await db.refresh(user)
     
     # 生成 Token
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, role=user.role.value)
     refresh_token = create_refresh_token(user.id)
     
     return LoginResponse(
@@ -145,6 +145,10 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token"
         )
+
+    # 兼容新版本的 verify_token 返回字典格式
+    if isinstance(user_id, dict):
+        user_id = user_id.get("user_id")
     
     # 验证用户存在且活跃
     result = await db.execute(
@@ -159,7 +163,7 @@ async def refresh_token(
         )
     
     # 生成新 Token
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, role=user.role.value)
     refresh_token = create_refresh_token(user.id)
     
     return TokenResponse(

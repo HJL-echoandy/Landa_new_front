@@ -17,14 +17,19 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:landa2024@db:5432/landa
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=dev-secret-key-change-in-production
+      - TZ=Asia/Shanghai  # 设置时区
     volumes:
-      - ./app:/app/app:ro
+      - ./app:/app/app  # 应用代码热更新
+      - ./scripts:/app/scripts  # 脚本热更新
+      - ./alembic:/app/alembic  # 迁移脚本热更新
+      - ./logging.conf:/app/logging.conf  # 日志配置
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-config logging.conf
     networks:
       - landa-network
 
@@ -36,6 +41,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=landa2024
       - POSTGRES_DB=landa
+      - TZ=Asia/Shanghai  # 设置时区
+      - PGTZ=Asia/Shanghai  # PostgreSQL 时区
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

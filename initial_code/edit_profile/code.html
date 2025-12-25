@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Profile - Landa</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#197fe6",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111921",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark pb-10 shadow-xl">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+<button class="text-slate-500 dark:text-slate-400 text-base font-medium hover:text-slate-900 dark:hover:text-white transition-colors">
+                Cancel
+            </button>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Edit Profile</h2>
+<button class="text-primary text-base font-bold hover:text-blue-600 transition-colors">
+                Save
+            </button>
+</header>
+<!-- Profile Photo Section -->
+<div class="flex flex-col items-center pt-8 pb-6 px-4">
+<div class="relative group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-md">
+<img alt="Professional headshot of a female therapist" class="w-full h-full object-cover" data-alt="Professional headshot of a female therapist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRx_C-Cc73A0VB9RrHm4sIA9FLpoA863u-g_5LWbl0aXzboG10vfsShy-8_iKNyCKEx3WpTMiHlLA6zG0SHKfdU9iEnxa40OqqZHaJ-ewthxwxiHOL0_TCKK_2irwMlfh_VGu1NQJUEvJTJXkLvoG2T3KvPmHsVfiV6na1aM7U4woUgb4bonKsLsH8Yd2VGZCy21V_ULxVZjE-XaOlIhSRdTn_uufPjDJlDe8VPHyP_ArXF1QQV7JqwBYcqJMBMYoTmnOWWQ68GU0"/>
+</div>
+<div class="absolute bottom-1 right-1 bg-primary text-white p-2 rounded-full shadow-lg border-2 border-white dark:border-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+</div>
+</div>
+<button class="mt-4 text-primary font-bold text-sm bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-full transition-colors">
+                Change Photo
+            </button>
+</div>
+<div class="h-2 bg-slate-100 dark:bg-slate-800/50 w-full"></div>
+<!-- Personal Information -->
+<div class="w-full">
+<h3 class="text-slate-900 dark:text-white text-lg font-bold px-4 pt-6 pb-2">Personal Information</h3>
+<div class="flex flex-col gap-5 px-4 py-2">
+<!-- First Name -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">First Name</span>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary h-12 px-4 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" type="text" value="Jane"/>
+</label>
+<!-- Last Name -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">Last Name</span>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary h-12 px-4 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" type="text" value="Doe"/>
+</label>
+<!-- Bio -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">Bio</span>
+<textarea class="form-textarea w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary min-h-[100px] px-4 py-3 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none transition-colors">Certified massage therapist with over 5 years of experience specializing in deep tissue and sports recovery.</textarea>
+</label>
+<!-- Phone -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">Phone Number</span>
+<div class="relative">
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary h-12 pl-4 pr-10 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" type="tel" value="(555) 123-4567"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 material-symbols-outlined text-xl" title="Verified">check_circle</span>
+</div>
+</label>
+<!-- Email -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">Email</span>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary h-12 px-4 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" type="email" value="jane.doe@example.com"/>
+</label>
+</div>
+</div>
+<div class="h-2 bg-slate-100 dark:bg-slate-800/50 w-full mt-4"></div>
+<!-- Service Details -->
+<div class="w-full">
+<h3 class="text-slate-900 dark:text-white text-lg font-bold px-4 pt-6 pb-2">Professional Details</h3>
+<div class="flex flex-col gap-5 px-4 py-2">
+<!-- Experience -->
+<label class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-2">Years of Experience</span>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary h-12 px-4 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" type="number" value="5"/>
+</label>
+<!-- Service Areas -->
+<div class="flex flex-col w-full">
+<span class="text-slate-900 dark:text-slate-200 text-sm font-semibold pb-3">Service Areas</span>
+<div class="flex flex-wrap gap-2">
+<!-- Chip: Active -->
+<div class="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+<span class="text-sm font-bold">Downtown</span>
+<button class="flex items-center justify-center hover:bg-primary/20 rounded-full p-0.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Chip: Active -->
+<div class="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+<span class="text-sm font-bold">Northside</span>
+<button class="flex items-center justify-center hover:bg-primary/20 rounded-full p-0.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Chip: Add New -->
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span class="text-sm font-medium">Add Area</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="h-2 bg-slate-100 dark:bg-slate-800/50 w-full mt-4"></div>
+<!-- Certificates -->
+<div class="w-full">
+<div class="flex items-center justify-between px-4 pt-6 pb-2">
+<h3 class="text-slate-900 dark:text-white text-lg font-bold">Certificates</h3>
+</div>
+<div class="flex flex-col gap-3 px-4 py-2">
+<!-- Certificate Card 1 (Verified) -->
+<div class="flex items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="h-10 w-10 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 shrink-0">
+<span class="material-symbols-outlined">workspace_premium</span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">Massage Therapy License</p>
+<div class="flex items-center gap-1.5">
+<span class="text-green-600 text-xs font-bold uppercase tracking-wider">Verified</span>
+<span class="text-slate-400 text-xs">•</span>
+<span class="text-slate-500 dark:text-slate-400 text-xs">Exp. Dec 2024</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Certificate Card 2 (Pending) -->
+<div class="flex items-center p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="h-10 w-10 flex items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-500 shrink-0">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<p class="text-slate-900 dark:text-white text-base font-bold truncate">Deep Tissue Cert</p>
+<div class="flex items-center gap-1.5">
+<span class="text-orange-500 text-xs font-bold uppercase tracking-wider">Pending</span>
+<span class="text-slate-400 text-xs">•</span>
+<span class="text-slate-500 dark:text-slate-400 text-xs">Uploaded Yesterday</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Add Certificate Button -->
+<button class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 text-primary font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+<span class="material-symbols-outlined">add_circle</span>
+<span>Add New Certificate</span>
+</button>
+</div>
+</div>
+<!-- Bottom Spacer -->
+<div class="h-10 bg-transparent"></div>
+</div>
+</body></html>

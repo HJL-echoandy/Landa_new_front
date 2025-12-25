@@ -2,11 +2,18 @@
  * 常量配置文件
  */
 
+import { Platform } from 'react-native';
+
 // API 配置
 export const API_CONFIG = {
-  BASE_URL: process.env.API_BASE_URL || 'http://localhost:8000',
+  // Android 模拟器使用 10.0.2.2 代替 localhost
+  // iOS 模拟器使用 localhost
+  // 真机使用电脑的局域网 IP (如: 192.168.1.100)
+  BASE_URL: Platform.OS === 'android' 
+    ? (process.env.API_BASE_URL || 'http://10.0.2.2:8000')
+    : (process.env.API_BASE_URL || 'http://localhost:8000'),
   TIMEOUT: parseInt(process.env.API_TIMEOUT || '10000', 10),
-  API_PREFIX: '/api',
+  API_PREFIX: '/api/v1',
 };
 
 // 订单状态

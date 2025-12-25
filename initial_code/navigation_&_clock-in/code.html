@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Navigation &amp; Clock-in</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "primary-dark": "#0e45b5",
+                        "background-light": "#f8f9fc",
+                        "background-dark": "#101622",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2230",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "3xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-hidden">
+<div class="relative flex h-full min-h-screen w-full flex-col group/design-root">
+<!-- Header -->
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between z-20">
+<button class="text-slate-900 dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">Order #8493</h2>
+</div>
+<!-- Main Content Area -->
+<div class="flex flex-col flex-1 relative h-full">
+<!-- Map Section (Top ~45%) -->
+<div class="relative h-[45vh] w-full bg-slate-200 dark:bg-slate-800 shrink-0">
+<!-- Map Image -->
+<div class="absolute inset-0 bg-cover bg-center opacity-90" data-alt="Map view showing city streets with a navigation route marked in blue" data-location="San Francisco" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmCDTGV3pPUWS4V9KMPcOZ9ffndoTKDolz1Q0R-tpwquTWTLb8CU8rvBuOHd-BUq26kzRAS5Y9gldXSoRrttn_hon-mzPVofqJFeolAZwYokCmhWrq_0zoE_-i5bNBrqVzatQ2dlkE78pejs3ozUsCVGaN4LxR96NH8F_x1Ccaa1APFOKtu2uga457SluFuJ4v2xVKdTV_2oVIkJU8flViSfh7eNXx29lnPj9ddWp7Qlkgu9xz26CS27SCjUecOarWWn5-Z9ViLVs");'>
+</div>
+<!-- Map Overlay Gradient for readability -->
+<div class="absolute inset-0 bg-gradient-to-b from-background-light/80 to-transparent dark:from-background-dark/80 h-16 pointer-events-none"></div>
+<!-- Navigation FAB (Overlay on Map) -->
+<div class="absolute bottom-10 right-4 z-10">
+<button class="flex items-center justify-center gap-2 bg-slate-900 text-white dark:bg-primary dark:text-white hover:bg-slate-800 dark:hover:bg-primary-dark rounded-full px-5 py-3 shadow-lg transform transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[20px] filled">near_me</span>
+<span class="font-semibold text-sm">Navigate</span>
+</button>
+</div>
+<!-- Current Location Marker (Mock) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
+<div class="h-4 w-4 bg-primary rounded-full border-2 border-white shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Sheet / Control Panel (Bottom ~55% with overlap) -->
+<div class="flex-1 bg-surface-light dark:bg-surface-dark rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] -mt-6 relative z-10 flex flex-col">
+<!-- Handle -->
+<div class="flex w-full justify-center pt-3 pb-2">
+<div class="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-6 pb-24">
+<!-- Progress Stepper -->
+<div class="mt-2 mb-6">
+<div class="flex justify-between items-center relative">
+<!-- Connecting Line -->
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 dark:bg-slate-700 -z-10 transform -translate-y-1/2"></div>
+<!-- Step 1: On Way (Active) -->
+<div class="flex flex-col items-center gap-1.5 bg-surface-light dark:bg-surface-dark px-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-md ring-4 ring-surface-light dark:ring-surface-dark">
+<span class="material-symbols-outlined text-sm">directions_car</span>
+</div>
+<span class="text-[10px] font-bold text-primary uppercase tracking-wide">On Way</span>
+</div>
+<!-- Step 2: Arrived -->
+<div class="flex flex-col items-center gap-1.5 bg-surface-light dark:bg-surface-dark px-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 ring-4 ring-surface-light dark:ring-surface-dark">
+<span class="material-symbols-outlined text-[10px]">location_on</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Arrive</span>
+</div>
+<!-- Step 3: Service -->
+<div class="flex flex-col items-center gap-1.5 bg-surface-light dark:bg-surface-dark px-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 ring-4 ring-surface-light dark:ring-surface-dark">
+<span class="material-symbols-outlined text-[10px]">spa</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Service</span>
+</div>
+<!-- Step 4: Done -->
+<div class="flex flex-col items-center gap-1.5 bg-surface-light dark:bg-surface-dark px-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 ring-4 ring-surface-light dark:ring-surface-dark">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Done</span>
+</div>
+</div>
+</div>
+<!-- Order Info Card -->
+<div class="space-y-6">
+<!-- Header with Time & Distance -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-primary font-bold">
+<span class="material-symbols-outlined filled text-xl">schedule</span>
+<span>14:00 Today</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium">
+<span class="material-symbols-outlined text-sm">distance</span>
+<span>2.4 km</span>
+</div>
+</div>
+<!-- Client & Address -->
+<div class="flex flex-col gap-4">
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
+                                123 Wellness Blvd, Apt 4B<br/>
+<span class="text-lg font-normal text-slate-500 dark:text-slate-400">Downtown District</span>
+</h1>
+<div class="flex items-center gap-4 py-4 border-t border-b border-slate-100 dark:border-slate-800">
+<img alt="Profile picture of client Sarah Jenkins" class="w-12 h-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700" data-alt="Portrait of a woman with a gentle smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzCsGw3vevrvNcFC8ggyJBA82fNJvecIncWOxlr2DCcZo3NnNcIp6VmJtA6Vgh28x_Jx9F5Cj4Z52IqKuXxMXqDYPBI0r6UnX-q-ZpIptI1ACrPcFg989XLXhxJJoTL4taFod5Dk2oBamWbuFHUrkgX8VslkWChoyV2ZnDGRf-CXq5nla1NglTe04G82DE5dK5MgAKRzsqnjxXV3z32V_lrbN7qErm3Qo8QJWPueBWWSicQ-2MRxT1-OGJHOT-1FGX5ckBrCmFBy8"/>
+<div class="flex-1">
+<div class="font-bold text-slate-900 dark:text-white">Sarah Jenkins</div>
+<div class="flex items-center gap-1 text-sm text-yellow-500">
+<span class="material-symbols-outlined text-sm filled">star</span>
+<span class="font-medium text-slate-600 dark:text-slate-300">4.9</span>
+<span class="text-slate-400 text-xs">(12 orders)</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined">call</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notes -->
+<div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 p-4 rounded-xl flex gap-3">
+<span class="material-symbols-outlined text-yellow-600 dark:text-yellow-500 shrink-0">info</span>
+<div class="text-sm">
+<span class="font-bold text-yellow-800 dark:text-yellow-400 block mb-1">Client Note</span>
+<p class="text-yellow-800/80 dark:text-yellow-200/80 leading-relaxed">
+                                    The gate code is #4455. Please park in visitor spot 12 or on the street.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Footer Actions -->
+<div class="absolute bottom-0 left-0 w-full bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 p-5 pb-8">
+<div class="flex flex-col gap-3">
+<!-- Primary Action: Arrive -->
+<button class="flex w-full cursor-pointer items-center justify-center rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-white text-lg font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined mr-2">location_on</span>
+<span>到达打卡 (Arrive)</span>
+</button>
+<!-- Secondary Help Action -->
+<button class="w-full text-slate-500 dark:text-slate-400 text-sm font-medium py-2 hover:text-slate-800 dark:hover:text-white transition-colors">
+                            Trouble finding location? Contact Support
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

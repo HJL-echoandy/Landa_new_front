@@ -69,16 +69,32 @@ export interface UpdateStatusRequest {
 
 export interface LoginRequest {
   phone: string;
-  password?: string;
-  verification_code?: string;
-  login_type: 'password' | 'verification_code';
+  code: string; // 后端使用 'code' 字段
 }
 
 export interface LoginResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
   expires_in: number;
-  user: TherapistProfile;
+  therapist: TherapistInfo; // 后端返回 'therapist' 字段
+}
+
+export interface TherapistInfo {
+  id: number;
+  user_id: number;
+  phone: string;
+  nickname: string;
+  avatar: string;
+  role: string;
+  name: string;
+  title: string;
+  experience_years: number;
+  rating: number;
+  review_count: number;  // 与后端一致
+  completed_count: number;  // 与后端一致
+  is_verified: boolean;
+  is_active: boolean;  // 与后端一致
 }
 
 export interface RegisterRequest {
@@ -94,6 +110,9 @@ export interface RegisterRequest {
 
 export interface VerificationCodeRequest {
   phone: string;
-  type: 'login' | 'register';
+}
+
+export interface VerificationCodeResponse {
+  message: string;
 }
 

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>App Settings - Landa</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#23220f",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d2c1b", // Slightly lighter than dark background for cards
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Toggle Switch Transition */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #f9f506;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #f9f506;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-primary selection:text-black">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-50 flex items-center bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 py-3 justify-between border-b border-zinc-200 dark:border-zinc-800">
+<button class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+<span class="material-symbols-outlined text-zinc-900 dark:text-white" style="font-size: 24px;">arrow_back</span>
+</button>
+<h2 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">App Settings</h2>
+</div>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-md mx-auto px-4 py-6 flex flex-col gap-6">
+<!-- Preferences Section -->
+<section>
+<h3 class="text-zinc-500 dark:text-zinc-400 text-xs font-bold tracking-wider px-4 pb-2 uppercase">Preferences</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+<!-- Sound Toggle -->
+<div class="flex items-center gap-4 px-4 h-16 justify-between border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-primary/20 text-yellow-700 dark:text-yellow-300">
+<span class="material-symbols-outlined" style="font-size: 18px;">notifications_active</span>
+</div>
+<p class="text-base font-medium leading-normal flex-1 truncate">Sound</p>
+</div>
+<div class="shrink-0">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<!-- Vibration Toggle -->
+<div class="flex items-center gap-4 px-4 h-16 justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-primary/20 text-yellow-700 dark:text-yellow-300">
+<span class="material-symbols-outlined" style="font-size: 18px;">vibration</span>
+</div>
+<p class="text-base font-medium leading-normal flex-1 truncate">Vibration</p>
+</div>
+<div class="shrink-0">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- General Section -->
+<section>
+<h3 class="text-zinc-500 dark:text-zinc-400 text-xs font-bold tracking-wider px-4 pb-2 uppercase">General</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+<!-- Language -->
+<button class="w-full flex items-center gap-4 px-4 h-16 justify-between border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+<span class="material-symbols-outlined" style="font-size: 18px;">language</span>
+</div>
+<p class="text-base font-medium leading-normal">Language</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-zinc-400 dark:text-zinc-500 text-sm">English</span>
+<span class="material-symbols-outlined text-zinc-400" style="font-size: 20px;">chevron_right</span>
+</div>
+</button>
+<!-- Privacy Policy -->
+<button class="w-full flex items-center gap-4 px-4 h-16 justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+<span class="material-symbols-outlined" style="font-size: 18px;">policy</span>
+</div>
+<p class="text-base font-medium leading-normal">Privacy Policy</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-400" style="font-size: 20px;">chevron_right</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Account Section -->
+<section class="mt-4">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+<button class="w-full flex items-center justify-between px-4 h-16 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+<span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+</div>
+<p class="text-base font-medium leading-normal text-red-600 dark:text-red-400">Log out</p>
+</div>
+</button>
+</div>
+<!-- Alternative distinct logout button style (if preferred over list item) -->
+<div class="mt-8 px-2">
+<button class="w-full bg-primary hover:bg-[#e6e205] text-black font-bold h-14 rounded-full shadow-lg shadow-primary/20 transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">logout</span>
+<span>Log out</span>
+</button>
+</div>
+</section>
+<!-- Footer -->
+<div class="mt-auto py-6 flex flex-col items-center justify-center gap-1 opacity-40">
+<span class="material-symbols-outlined text-3xl mb-1">spa</span>
+<p class="text-xs font-medium">Landa Therapist App v2.4.0</p>
+</div>
+</main>
+</body></html>

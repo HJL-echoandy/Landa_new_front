@@ -18,6 +18,7 @@ ALGORITHM = "HS256"
 
 def create_access_token(
     subject: Any, 
+    role: Optional[str] = None,
     expires_delta: Optional[timedelta] = None
 ) -> str:
     """
@@ -25,6 +26,7 @@ def create_access_token(
     
     Args:
         subject: 令牌主题（通常是用户ID）
+        role: 用户角色（user/therapist/admin）
         expires_delta: 过期时间增量
         
     Returns:
@@ -42,6 +44,10 @@ def create_access_token(
         "sub": str(subject),
         "type": "access"
     }
+    
+    # 添加角色信息到 Token
+    if role:
+        to_encode["role"] = role
     
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -69,7 +75,7 @@ def create_refresh_token(subject: Any) -> str:
     return encoded_jwt
 
 
-def verify_token(token: str, token_type: str = "access") -> Optional[str]:
+def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
     """
     验证令牌
     
@@ -78,17 +84,21 @@ def verify_token(token: str, token_type: str = "access") -> Optional[str]:
         token_type: 令牌类型 (access/refresh)
         
     Returns:
-        用户ID 或 None
+        包含 user_id 和 role 的字典，或 None
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         type_: str = payload.get("type")
+        role: str = payload.get("role")
         
         if user_id is None or type_ != token_type:
             return None
             
-        return user_id
+        return {
+            "user_id": user_id,
+            "role": role
+        }
     except JWTError:
         return None
 
