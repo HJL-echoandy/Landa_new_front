@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Snackbar, Portal, Provider as PaperProvider } from 'react-native-paper';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
@@ -20,6 +21,23 @@ export default function CheckInScreen() {
   const route = useRoute();
   const { orderId, type } = (route.params as any) || { orderId: '8493', type: 'arrived' };
 
+  // ✅ Snackbar 状态管理
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // ✅ 显示 Snackbar
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // ✅ 隐藏 Snackbar
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
   // Determine current step based on type
   const getStep = () => {
     switch(type) {
@@ -33,9 +51,10 @@ export default function CheckInScreen() {
   const currentStep = getStep();
 
   const handleAction = () => {
-    Alert.alert('Success', 'Action completed successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() }
-    ]);
+    showSnackbar('操作成功完成！', 'success');
+    setTimeout(() => {
+      navigation.goBack();
+    }, 1500);
   };
 
   const renderStep = (step: number, icon: any, label: string, isActive: boolean, isCompleted: boolean) => (
@@ -59,17 +78,18 @@ export default function CheckInScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.header} edges={['top']}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order #{orderId}</Text>
-        <View style={{ width: 40 }} />
-      </SafeAreaView>
+    <PaperProvider>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.header} edges={['top']}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Order #{orderId}</Text>
+          <View style={{ width: 40 }} />
+        </SafeAreaView>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Stepper */}
@@ -108,12 +128,30 @@ export default function CheckInScreen() {
         <TouchableOpacity style={styles.mainButton} onPress={handleAction}>
           <Text style={styles.buttonText}>
              {currentStep === 2 ? 'Confirm Arrival' : 
-               currentStep === 3 ? 'Start Service' : 'Complete Service'}
+              currentStep === 3 ? 'Start Service' : 'Complete Service'}
           </Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* ✅ Snackbar */}
+      <Portal>
+        <Snackbar
+          visible={snackbar.visible}
+          onDismiss={hideSnackbar}
+          duration={3000}
+          style={{
+            backgroundColor: 
+              snackbar.type === 'success' ? '#22C55E' : 
+              snackbar.type === 'error' ? '#EF4444' : 
+              '#3B82F6',
+          }}
+        >
+          {snackbar.message}
+        </Snackbar>
+      </Portal>
     </View>
+    </PaperProvider>
   );
 }
 

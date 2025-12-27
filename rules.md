@@ -1040,7 +1040,528 @@ docker exec -i landa-postgres psql -U postgres landa < backup_20241226_100000.sq
 
 ---
 
+## 🎨 前端 UI 组件规范（新增！）
+
+### ⚠️ 核心原则
+**使用 UI 库的组件，而非系统原生组件！**
+
+❌ **禁止**:
+- 使用系统原生 `Alert` 弹窗
+- 使用系统原生 `confirm` 对话框
+- 自己手写样式来实现通用组件
+
+✅ **必须**:
+- 使用 `react-native-paper` 的 Material Design 组件
+- 保持 UI 风格统一
+- 提供更好的用户体验
+
+### 📱 React Native 提示组件对比
+
+#### ❌ 错误示例：使用系统 Alert
+
+```typescript
+// ❌ 不好：使用系统原生 Alert
+import { Alert } from 'react-native';
+
+const handleSuccess = () => {
+  Alert.alert('成功', '操作成功！');  // 样式丑陋，无法自定义
+};
+
+const handleError = () => {
+  Alert.alert('错误', '操作失败，请重试');  // 不符合应用设计风格
+};
+```
+
+**问题**：
+- ❌ 样式丑陋，无法自定义
+- ❌ 与应用整体设计风格不符
+- ❌ 用户体验差（需要手动关闭）
+- ❌ 在 iOS 和 Android 上表现不一致
+
+#### ✅ 正确示例：使用 Material Design Snackbar
+
+```typescript
+// ✅ 好：使用 react-native-paper 的 Snackbar
+import { Snackbar } from 'react-native-paper';
+
+export default function MyScreen() {
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // 显示提示
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // 隐藏提示
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
+  const handleSuccess = async () => {
+    try {
+      await someApiCall();
+      showSnackbar('操作成功！', 'success');  // ✅ 美观、简洁
+    } catch (error) {
+      showSnackbar('操作失败，请重试', 'error');  // ✅ 一致的错误提示
+    }
+  };
+
+  return (
+    <View>
+      {/* 你的页面内容 */}
+      
+      {/* ✅ Snackbar 组件 */}
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={hideSnackbar}
+        duration={3000}  // 3秒后自动关闭
+        action={{
+          label: '确定',
+          onPress: hideSnackbar,
+        }}
+        style={{
+          backgroundColor: 
+            snackbar.type === 'success' ? '#22C55E' :  // 绿色
+            snackbar.type === 'error' ? '#EF4444' :    // 红色
+            '#3B82F6',  // 蓝色（info）
+        }}
+      >
+        {snackbar.message}
+      </Snackbar>
+    </View>
+  );
+}
+```
+
+**优势**：
+- ✅ Material Design 风格，美观现代
+- ✅ 自动关闭，用户体验好
+- ✅ 可自定义颜色、位置、持续时间
+- ✅ 跨平台一致性好
+- ✅ 不打断用户操作流程
+
+### 📚 常用 UI 组件推荐
+
+#### 1. 提示消息 (Toast/Snackbar)
+
+```typescript
+// ✅ 使用 react-native-paper 的 Snackbar
+import { Snackbar } from 'react-native-paper';
+
+// 成功提示
+showSnackbar('保存成功', 'success');
+
+// 错误提示
+showSnackbar('网络错误，请重试', 'error');
+
+// 信息提示
+showSnackbar('数据已同步', 'info');
+```
+
+#### 2. 对话框 (Dialog)
+
+```typescript
+// ✅ 使用 react-native-paper 的 Dialog
+import { Portal, Dialog, Button } from 'react-native-paper';
+
+<Portal>
+  <Dialog visible={visible} onDismiss={hideDialog}>
+    <Dialog.Title>确认删除</Dialog.Title>
+    <Dialog.Content>
+      <Text>确定要删除这条记录吗？</Text>
+    </Dialog.Content>
+    <Dialog.Actions>
+      <Button onPress={hideDialog}>取消</Button>
+      <Button onPress={handleConfirm}>确定</Button>
+    </Dialog.Actions>
+  </Dialog>
+</Portal>
+```
+
+#### 3. 底部弹出菜单 (Bottom Sheet)
+
+```typescript
+// ✅ 使用 @gorhom/bottom-sheet
+import BottomSheet from '@gorhom/bottom-sheet';
+
+<BottomSheet
+  snapPoints={['25%', '50%', '75%']}
+  onChange={handleSheetChanges}
+>
+  {/* 底部菜单内容 */}
+</BottomSheet>
+```
+
+#### 4. 加载指示器 (Loading)
+
+```typescript
+// ✅ 使用 react-native-paper 的 ActivityIndicator
+import { ActivityIndicator } from 'react-native-paper';
+
+<ActivityIndicator 
+  animating={true} 
+  color="#FFE600" 
+  size="large" 
+/>
+```
+
+### 🎯 UI 组件选择指南
+
+| 场景 | ❌ 避免使用 | ✅ 推荐使用 |
+|------|-----------|-----------|
+| 成功/错误提示 | `Alert.alert()` | `Snackbar` |
+| 确认对话框 | `Alert.alert()` | `Dialog` |
+| 输入表单 | 原生 `TextInput` | `TextInput` (Paper) |
+| 按钮 | 原生 `Button` | `Button` (Paper) |
+| 列表 | 原生 `FlatList` + 自定义样式 | `FlatList` + Paper 组件 |
+| 开关 | 原生 `Switch` | `Switch` (Paper) |
+| 复选框 | 自己实现 | `Checkbox` (Paper) |
+| 单选框 | 自己实现 | `RadioButton` (Paper) |
+
+### 📋 UI 组件使用检查清单
+
+开发新功能前：
+```
+□ 确认需要的提示/交互类型
+□ 查看 react-native-paper 文档
+□ 选择合适的 Material Design 组件
+□ 定义组件状态（visible, message, type 等）
+□ 实现显示/隐藏逻辑
+```
+
+代码审查时：
+```
+□ 是否使用了系统原生 Alert？（需要替换）
+□ 是否使用了系统原生 confirm？（需要替换）
+□ UI 风格是否与整体设计一致？
+□ 是否复用了已有的 UI 组件？
+□ 颜色是否使用了设计系统中定义的常量？
+```
+
+### 💡 实战案例：替换 Alert 为 Snackbar
+
+#### Before（❌ 使用 Alert）
+
+```typescript
+// ❌ 不好的代码
+import { Alert } from 'react-native';
+
+const handleStatusChange = async (status: string) => {
+  try {
+    await updateStatus(status);
+    Alert.alert('成功', '状态已更新');  // 需要用户点击确定
+  } catch (error) {
+    Alert.alert('失败', '状态更新失败');  // 样式丑陋
+  }
+};
+```
+
+#### After（✅ 使用 Snackbar）
+
+```typescript
+// ✅ 好的代码
+import { Snackbar } from 'react-native-paper';
+
+const [snackbar, setSnackbar] = useState({
+  visible: false,
+  message: '',
+  type: 'success' as 'success' | 'error' | 'info',
+});
+
+const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  setSnackbar({ visible: true, message, type });
+};
+
+const hideSnackbar = () => {
+  setSnackbar({ ...snackbar, visible: false });
+};
+
+const handleStatusChange = async (status: string) => {
+  try {
+    await updateStatus(status);
+    showSnackbar('状态已更新', 'success');  // ✅ 自动关闭，不打断用户
+  } catch (error) {
+    showSnackbar('状态更新失败', 'error');  // ✅ 美观、一致
+  }
+};
+
+return (
+  <View>
+    {/* 页面内容 */}
+    
+    {/* Snackbar */}
+    <Snackbar
+      visible={snackbar.visible}
+      onDismiss={hideSnackbar}
+      duration={3000}
+      action={{ label: '确定', onPress: hideSnackbar }}
+      style={{
+        backgroundColor: 
+          snackbar.type === 'success' ? '#22C55E' :
+          snackbar.type === 'error' ? '#EF4444' :
+          '#3B82F6',
+      }}
+    >
+      {snackbar.message}
+    </Snackbar>
+  </View>
+);
+```
+
+**改进点**：
+1. ✅ 使用 Material Design Snackbar
+2. ✅ 自动关闭（3秒）
+3. ✅ 颜色语义化（成功=绿色，失败=红色）
+4. ✅ 不打断用户操作
+5. ✅ UI 更美观、更现代
+
+### 🚨 常见错误
+
+#### 错误 1: 混用多种提示方式
+
+```typescript
+// ❌ 错误：一会儿用 Alert，一会儿用 Snackbar
+Alert.alert('成功', '保存成功');
+showToast('删除成功');  // 另一个提示库
+showSnackbar('更新成功');  // 又一个提示方式
+
+// ✅ 正确：统一使用 Snackbar
+showSnackbar('保存成功', 'success');
+showSnackbar('删除成功', 'success');
+showSnackbar('更新成功', 'success');
+```
+
+#### 错误 2: 忘记清理状态
+
+```typescript
+// ❌ 错误：没有清理 Snackbar 状态
+const showSnackbar = (message: string) => {
+  setSnackbar({ visible: true, message, type: 'success' });
+  // 忘记设置自动关闭或提供关闭按钮
+};
+
+// ✅ 正确：提供关闭逻辑
+<Snackbar
+  visible={snackbar.visible}
+  onDismiss={hideSnackbar}  // ✅ 用户可手动关闭
+  duration={3000}  // ✅ 自动关闭
+/>
+```
+
+#### 错误 3: 硬编码颜色值
+
+```typescript
+// ❌ 错误：直接写颜色值
+<Snackbar style={{ backgroundColor: '#22C55E' }}>
+  成功
+</Snackbar>
+
+// ✅ 正确：使用设计系统常量
+const COLORS = {
+  success: '#22C55E',
+  error: '#EF4444',
+  info: '#3B82F6',
+};
+
+<Snackbar style={{ backgroundColor: COLORS.success }}>
+  成功
+</Snackbar>
+```
+
+---
+
+## 🤖 AI 协作开发规范（新增！）
+
+### ⚠️ 核心原则
+在使用 AI 辅助开发时，必须遵守以下规则以提高效率和降低成本：
+
+### 🥇 规则 1: 禁止生成总结文档
+```bash
+# ❌ 错误：每次完成功能后都生成总结 MD
+- 收入统计功能完成总结.md
+- 订单管理完成总结.md  
+- UI迁移完成总结.md
+- 认证功能完成总结.md
+
+# 问题：
+- 浪费大量 token（每个文档 2000-5000 tokens）
+- 信息重复，已在代码注释和 git commit 中记录
+- 文档很快过时，维护成本高
+- 不如直接查看代码和 git history
+
+# ✅ 正确：只维护核心文档
+- rules.md (开发规范 - 持续更新)
+- 进度管理.md (项目进度 - 定期更新)
+- README.md (项目说明)
+- API 文档（自动生成）
+```
+
+**例外情况**：
+- ✅ 只有在用户**明确要求**时才生成总结文档
+- ✅ 复杂的架构变更需要设计文档时
+- ✅ 重大功能发布需要 Release Notes 时
+
+**正确做法**：
+```bash
+# 完成功能后的标准流程：
+1. ✅ 更新代码注释
+2. ✅ 更新 rules.md（如有新的规范或陷阱）
+3. ✅ 更新 进度管理.md（标记完成状态）
+4. ✅ Git commit 包含清晰的说明
+5. ❌ 不要生成单独的完成总结文档
+```
+
+### 🥈 规则 2: 及时更新开发规范
+```bash
+# ✅ 强制要求：遇到以下情况必须更新 rules.md
+
+1. 发现新的常见错误
+   例如：字段名错误、类型不匹配、枚举值错误
+   → 立即补充到"常见陷阱"部分
+
+2. 总结新的最佳实践
+   例如：API 组装模式、数据迁移步骤、UI 组件使用
+   → 立即补充到相应规范部分
+
+3. 引入新的技术栈/工具
+   例如：新增 Alembic 迁移、新增 react-native-paper
+   → 立即补充使用规范
+
+4. 项目规范变更
+   例如：字段命名标准调整、代码风格变更
+   → 立即更新相关规范
+
+5. 遇到耗时超过 30 分钟的调试
+   例如：某个字段错误花了 2 小时调试
+   → 必须记录到 rules.md，避免重复踩坑
+```
+
+**更新检查清单**：
+```
+完成功能开发后：
+□ 是否遇到了新的字段错误？ → 更新"常见陷阱"
+□ 是否发现了新的最佳实践？ → 更新相关规范
+□ 是否引入了新的工具/库？ → 补充使用规范
+□ 是否调试超过 30 分钟？ → 记录问题和解决方案
+□ 是否有新的开发流程？ → 更新工作流部分
+```
+
+**为什么必须及时更新**：
+- ✅ rules.md 是团队知识库，越完善越高效
+- ✅ 避免重复踩坑，节省大量调试时间
+- ✅ 新成员快速上手，降低学习成本
+- ✅ AI 助手能获取最新规范，提供更准确建议
+- ✅ 持续改进开发流程，提升整体效率
+
+**更新格式**：
+```markdown
+# 在相应部分添加案例
+
+### 陷阱 X: [问题描述]
+
+```python
+# ❌ 错误示例
+[错误代码]
+
+# ✅ 正确示例
+[正确代码]
+```
+
+**解决方案**: [详细说明]
+**调试时间**: 花费 X 小时（如果看了 rules.md 只需 5 分钟！）
+```
+
+### 🎯 实战案例
+
+#### 案例 1: 避免生成冗余文档
+
+```bash
+# ❌ 错误流程
+完成收入统计功能
+→ 写 300 行代码
+→ 生成"收入统计功能完成总结.md"（2500 tokens）
+→ 生成"API文档总结.md"（1500 tokens）
+→ 生成"测试报告.md"（1000 tokens）
+→ 总计浪费 5000 tokens！
+
+# ✅ 正确流程
+完成收入统计功能
+→ 写 300 行代码（包含清晰注释）
+→ 更新 进度管理.md 标记完成（50 tokens）
+→ Git commit 附上功能说明（免费）
+→ 如遇到新陷阱，更新 rules.md（200 tokens）
+→ 总计 250 tokens，节省 95%！
+```
+
+#### 案例 2: 及时更新规范
+
+```bash
+# 发现问题：address.phone 导致 TypeError
+# 调试时间：2 小时
+
+# ❌ 错误：解决后不记录
+修复 bug → 继续开发 → 下次又遇到 → 又花 2 小时
+
+# ✅ 正确：立即更新 rules.md
+修复 bug 
+→ 在"常见陷阱"添加案例
+→ 下次 AI 助手直接提醒
+→ 团队成员看 rules.md 避免踩坑
+→ 节省所有人的时间！
+```
+
+### 📋 token 优化建议
+
+**高价值文档**（值得维护）：
+- ✅ `rules.md` - 开发规范（核心知识库）
+- ✅ `进度管理.md` - 项目进度（简洁列表）
+- ✅ `README.md` - 项目说明（必要信息）
+- ✅ 代码注释 - 解释复杂逻辑
+
+**低价值文档**（避免生成）：
+- ❌ 功能完成总结（重复信息）
+- ❌ API 使用示例总结（代码即文档）
+- ❌ 测试报告总结（CI/CD 已记录）
+- ❌ 每日工作总结（进度管理已够）
+
+**token 使用对比**：
+```
+传统方式（浪费型）:
+- 写代码: 5000 tokens
+- 生成 5 个总结文档: 10000 tokens
+- 文档很快过时: 0 价值
+总计: 15000 tokens → 高成本，低价值
+
+优化方式（高效型）:
+- 写代码 + 注释: 5500 tokens
+- 更新 rules.md: 300 tokens
+- 更新 进度管理.md: 100 tokens
+总计: 5900 tokens → 低成本，高价值
+
+节省: 60% tokens，同时提升文档质量！
+```
+
+---
+
 ## 📖 版本历史
+
+- **v2.3.0** (2024-12-27)
+  - 🆕 新增 AI 协作开发规范
+  - 🆕 规则 1: 禁止生成总结文档（节省 token）
+  - 🆕 规则 2: 及时更新开发规范（持续改进）
+  - 📝 补充 token 优化建议
+  - 📝 补充实战案例和对比分析
+
+- **v2.2.0** (2024-12-26)
+  - 🆕 新增前端 UI 组件规范
+  - 🆕 新增 Snackbar 替代 Alert 指南
+  - 🆕 新增 Material Design 组件推荐
+  - 🆕 新增 UI 组件选择指南
+  - 📝 补充实战案例和常见错误
 
 - **v2.1.0** (2024-12-26)
   - 🆕 新增数据库迁移规范
@@ -1065,31 +1586,12 @@ docker exec -i landa-postgres psql -U postgres landa < backup_20241226_100000.sq
 ---
 
 **维护者**: Landa Development Team  
-**最后更新**: 2024-12-26  
+**最后更新**: 2024-12-27  
 
 **记住核心理念**: 
 > 花 2 分钟检查模型，胜过花 20 分钟调试错误！  
 > 花 10 分钟阅读文档，胜过花 2 小时返工重写！  
-> 使用 Alembic 管理迁移，胜过手写 SQL 脚本造成版本混乱！
-
-- **v2.0.0** (2024-12-25)
-  - 新增字段命名统一性规范
-  - 新增 API 字段组装规则
-  - 新增效率提升技巧
-  - 扩展常见陷阱案例
-  - 新增快速检查清单
-  - 新增紧急救援指南
-
-- **v1.0.0** (2024-12-24)
-  - 初始版本
-  - 核心原则
-  - 基本工作流程
-
----
-
-**维护者**: Landa Development Team  
-**最后更新**: 2024-12-25  
-
-**记住核心理念**: 
-> 花 2 分钟检查模型，胜过花 20 分钟调试错误！  
-> 花 10 分钟阅读文档，胜过花 2 小时返工重写！
+> 使用 Alembic 管理迁移，胜过手写 SQL 脚本造成版本混乱！  
+> 使用 UI 库组件，胜过系统原生组件提升用户体验！  
+> 及时更新 rules.md，胜过重复踩坑浪费时间！  
+> 不生成冗余总结文档，胜过浪费 token 降低成本！

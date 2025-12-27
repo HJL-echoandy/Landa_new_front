@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Dialog, Button, Portal, Snackbar, Provider as PaperProvider } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
@@ -24,27 +25,39 @@ export default function SettingsScreen() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [vibrationEnabled, setVibrationEnabled] = useState(false);
 
+  // ✅ Dialog 和 Snackbar 状态管理
+  const [logoutDialog, setLogoutDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // ✅ 显示 Snackbar
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // ✅ 隐藏 Snackbar
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: () => {
-            dispatch(logout());
-            // Navigation will automatically redirect to Login screen
-          }
-        },
-      ]
-    );
+    setLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutDialog(false);
+    dispatch(logout());
+    showSnackbar('已退出登录', 'success');
+    // Navigation will automatically redirect to Login screen
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+    <PaperProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -145,7 +158,39 @@ export default function SettingsScreen() {
           <Text style={styles.copyrightText}>© 2024 Landa. All rights reserved.</Text>
         </View>
       </ScrollView>
+
+      {/* ✅ Logout Confirmation Dialog */}
+      <Portal>
+        <Dialog visible={logoutDialog} onDismiss={() => setLogoutDialog(false)}>
+          <Dialog.Title>退出登录</Dialog.Title>
+          <Dialog.Content>
+            <Text>确定要退出登录吗？</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setLogoutDialog(false)}>取消</Button>
+            <Button onPress={confirmLogout} textColor={COLORS.red}>退出</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* ✅ Snackbar */}
+      <Portal>
+        <Snackbar
+          visible={snackbar.visible}
+          onDismiss={hideSnackbar}
+          duration={3000}
+          style={{
+            backgroundColor: 
+              snackbar.type === 'success' ? '#22C55E' : 
+              snackbar.type === 'error' ? '#EF4444' : 
+              '#3B82F6',
+          }}
+        >
+          {snackbar.message}
+        </Snackbar>
+      </Portal>
     </SafeAreaView>
+    </PaperProvider>
   );
 }
 

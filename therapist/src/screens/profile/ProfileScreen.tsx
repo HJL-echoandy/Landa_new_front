@@ -42,9 +42,9 @@ export default function ProfileScreen() {
   // 如果用户信息还没加载，显示加载中
   if (!user) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.backgroundLight }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ marginTop: 16, color: COLORS.textSec }}>加载中...</Text>
+        <Text style={{ marginTop: 16, color: COLORS.textSec, fontSize: 16 }}>加载用户信息...</Text>
       </View>
     );
   }

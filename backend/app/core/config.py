@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     OSS_BUCKET_NAME: Optional[str] = None
     OSS_ENDPOINT: Optional[str] = None
     
+    # Firebase Cloud Messaging (FCM) 配置
+    FCM_SERVER_KEY: Optional[str] = None
+    FCM_SENDER_ID: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

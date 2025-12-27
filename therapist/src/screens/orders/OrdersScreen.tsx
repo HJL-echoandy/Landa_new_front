@@ -12,8 +12,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Snackbar, Portal, Provider as PaperProvider } from 'react-native-paper';  // ✅ 添加 Portal 和 Provider
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
@@ -86,6 +87,23 @@ export default function OrdersScreen() {
     (user?.status as TherapistStatus) || 'offline'
   );
 
+  // ✅ Snackbar 状态管理（Material Design 提示）
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // ✅ 显示 Snackbar 提示
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // ✅ 隐藏 Snackbar
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
   // 根据 tab 获取对应的订单列表
   const getOrdersByTab = (): TherapistOrder[] => {
     switch (activeTab) {
@@ -109,7 +127,7 @@ export default function OrdersScreen() {
     } catch (err: any) {
       console.error('加载订单失败:', err);
       dispatch(setError(err.message || '加载订单失败'));
-      Alert.alert('错误', err.message || '加载订单失败');
+      showSnackbar(err.message || '加载订单失败', 'error');  // ✅ 使用 Snackbar
     } finally {
       dispatch(setLoading(false));
     }
@@ -127,8 +145,9 @@ export default function OrdersScreen() {
     loadOrders();
   }, []);
 
-  // 切换技师状态（✅ 调用后端 API）
+  // 切换技师状态（✅ 调用后端 API + Material Design 提示）
   const handleStatusChange = async (status: TherapistStatus) => {
+    const previousStatus = therapistStatus;
     try {
       setTherapistStatus(status);
       
@@ -136,12 +155,14 @@ export default function OrdersScreen() {
       await authApi.updateTherapistStatus(status);
       console.log('✅ 技师状态更新成功:', status);
       
-      Alert.alert('状态已更新', `您已切换为${STATUS_CONFIG[status].label}`);
+      // ✅ 使用 Snackbar 显示成功提示
+      showSnackbar(`您已切换为${STATUS_CONFIG[status].label}`, 'success');
     } catch (error) {
       console.error('❌ 更新技师状态失败:', error);
-      Alert.alert('更新失败', '状态切换失败，请稍后再试');
+      // ✅ 使用 Snackbar 显示错误提示
+      showSnackbar('状态切换失败，请稍后再试', 'error');
       // 恢复之前的状态
-      setTherapistStatus(therapistStatus);
+      setTherapistStatus(previousStatus);
     }
   };
 
@@ -224,11 +245,10 @@ export default function OrdersScreen() {
         {item.status === BookingStatus.PENDING && (
           <View style={styles.cardFooter}>
             <Text style={styles.totalPrice}>总价: ¥{item.total_price}</Text>
-            <View style={styles.actions}>
-              <TouchableOpacity style={styles.viewButton}>
-                <Text style={styles.viewText}>查看详情</Text>
-                <MaterialIcons name="arrow-forward" size={16} color="black" />
-              </TouchableOpacity>
+            {/* 整个卡片可点击，这里显示价格和提示即可 */}
+            <View style={styles.viewButtonStatic}>
+              <Text style={styles.viewText}>查看详情</Text>
+              <MaterialIcons name="arrow-forward" size={16} color="black" />
             </View>
           </View>
         )}
@@ -252,14 +272,15 @@ export default function OrdersScreen() {
   const currentOrders = getOrdersByTab();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.headerTitle}>订单</Text>
-            <Text style={styles.headerSubtitle}>管理您的预约订单</Text>
-          </View>
+    <PaperProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.headerTitle}>订单</Text>
+              <Text style={styles.headerSubtitle}>管理您的预约订单</Text>
+            </View>
           
           {/* 状态选择器 */}
           <View style={styles.statusSelector}>
@@ -350,7 +371,29 @@ export default function OrdersScreen() {
           />
         )}
       </View>
+
+      {/* ✅ Material Design Snackbar 提示 - 使用 Portal 避免被其他组件遮挡 */}
+      <Portal>
+        <Snackbar
+          visible={snackbar.visible}
+          onDismiss={hideSnackbar}
+          duration={3000}
+          action={{
+            label: '确定',
+            onPress: hideSnackbar,
+          }}
+          style={{
+            backgroundColor: 
+              snackbar.type === 'success' ? COLORS.green :
+              snackbar.type === 'error' ? COLORS.red :
+              COLORS.blue,
+          }}
+        >
+          {snackbar.message}
+        </Snackbar>
+      </Portal>
     </SafeAreaView>
+  </PaperProvider>
   );
 }
 
@@ -614,11 +657,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textMain,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  viewButton: {
+  viewButtonStatic: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 36,
