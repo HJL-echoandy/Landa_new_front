@@ -112,9 +112,9 @@ async def create_booking(
     db: AsyncSession = Depends(get_db)
 ):
     """创建预约"""
-    # 验证治疗师
+    # 验证治疗师（只检查是否已验证，不检查在线状态）
     therapist_result = await db.execute(
-        select(Therapist).where(Therapist.id == data.therapist_id).where(Therapist.is_active == True)
+        select(Therapist).where(Therapist.id == data.therapist_id).where(Therapist.is_verified == True)
     )
     therapist = therapist_result.scalar_one_or_none()
     if not therapist:

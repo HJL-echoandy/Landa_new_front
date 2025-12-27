@@ -9,10 +9,8 @@ export const API_CONFIG = {
   // Android 模拟器使用 10.0.2.2 代替 localhost
   // iOS 模拟器使用 localhost
   // 真机使用电脑的局域网 IP (如: 192.168.1.100)
-  BASE_URL: Platform.OS === 'android' 
-    ? (process.env.API_BASE_URL || 'http://10.0.2.2:8000')
-    : (process.env.API_BASE_URL || 'http://localhost:8000'),
-  TIMEOUT: parseInt(process.env.API_TIMEOUT || '10000', 10),
+  BASE_URL: 'http://192.168.13.145:8000',
+  TIMEOUT: 10000,
   API_PREFIX: '/api/v1',
 };
 

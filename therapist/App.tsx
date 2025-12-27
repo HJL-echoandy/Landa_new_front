@@ -13,10 +13,14 @@ import RootNavigator from './src/navigation';
 import { navigationRef } from './src/navigation/navigationRef';
 import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { useAuthCheck } from './src/hooks/useAuthCheck';
+import { useNotifications } from './src/hooks/useNotifications';
 
 // App 内容组件（在 Redux 和持久化恢复之后）
 function AppContent() {
   const { isChecking } = useAuthCheck();
+  
+  // 初始化通知系统（WebSocket + Push）
+  useNotifications();
 
   if (isChecking) {
     return (

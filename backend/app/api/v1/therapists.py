@@ -37,7 +37,8 @@ async def get_therapists(
     db: AsyncSession = Depends(get_db)
 ):
     """获取治疗师列表"""
-    query = select(Therapist).where(Therapist.is_active == True)
+    # 只显示已验证的技师（不管在线状态）
+    query = select(Therapist).where(Therapist.is_verified == True)
     
     if featured is not None:
         query = query.where(Therapist.is_featured == featured)
@@ -75,7 +76,7 @@ async def get_therapist_detail(
     result = await db.execute(
         select(Therapist)
         .where(Therapist.id == therapist_id)
-        .where(Therapist.is_active == True)
+        .where(Therapist.is_verified == True)
     )
     therapist = result.scalar_one_or_none()
     
@@ -149,7 +150,7 @@ async def get_therapist_availability(
     """
     # 验证治疗师存在
     therapist_result = await db.execute(
-        select(Therapist).where(Therapist.id == therapist_id).where(Therapist.is_active == True)
+        select(Therapist).where(Therapist.id == therapist_id).where(Therapist.is_verified == True)
     )
     if not therapist_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="治疗师不存在")

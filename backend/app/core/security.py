@@ -103,6 +103,28 @@ def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
         return None
 
 
+def decode_access_token(token: str) -> Optional[dict]:
+    """
+    解码访问令牌（用于 WebSocket 等场景）
+    
+    Args:
+        token: JWT 令牌
+        
+    Returns:
+        包含 sub, role 等信息的字典，或 None
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        token_type = payload.get("type")
+        
+        if token_type != "access":
+            return None
+            
+        return payload
+    except JWTError:
+        return None
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
     return pwd_context.verify(plain_password, hashed_password)

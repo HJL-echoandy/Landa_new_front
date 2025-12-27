@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "600766517998",
+    "project_id": "landa-486fe",
+    "storage_bucket": "landa-486fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600766517998:android:4aede6718156d4f6d719ff",
+        "android_client_info": {
+          "package_name": "com.andy_hwang.therapist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1tXcdnRFAX83EvWW8WxCV_Wqkn85kol8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

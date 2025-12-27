@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Snackbar, Portal, Provider as PaperProvider } from 'react-native-paper';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import incomeApi from '../../api/income';
+import { IncomeSummary, IncomeStatistics } from '../../types/income';
+import { INCOME_PERIOD } from '../../utils/constants';
 
 const COLORS = {
   primary: '#FFD600', // Yellow
@@ -13,140 +19,300 @@ const COLORS = {
   textMain: '#111827',
   textSec: '#6B7280',
   border: '#E5E7EB',
+  success: '#22C55E',
+  error: '#EF4444',
+  info: '#3B82F6',
 };
-
-const CHART_DATA = [
-  { label: '10', height: '20%', active: false },
-  { label: '12', height: '45%', active: false },
-  { label: '14', height: '85%', active: true, value: '¥480' },
-  { label: '16', height: '30%', active: false },
-  { label: '18', height: '60%', active: false },
-  { label: '20', height: '15%', active: false },
-];
 
 export default function IncomeScreen() {
   const navigation = useNavigation();
-  const [period, setPeriod] = useState('today'); // today, week, month
+  const { user } = useSelector((state: RootState) => state.auth);
+  
+  // 状态管理
+  const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // 数据状态
+  const [incomeSummary, setIncomeSummary] = useState<IncomeSummary | null>(null);
+  const [incomeStats, setIncomeStats] = useState<IncomeStatistics | null>(null);
+  
+  // Snackbar 状态
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // 显示 Snackbar
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // 隐藏 Snackbar
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
+  // 加载收入数据
+  useEffect(() => {
+    loadIncomeData();
+  }, [period]);
+
+  const loadIncomeData = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      // 并行加载收入汇总和统计数据
+      const [summaryData, statsData] = await Promise.all([
+        incomeApi.getIncomeSummary(),
+        incomeApi.getIncomeStatistics({
+          period: period === 'today' ? INCOME_PERIOD.TODAY : 
+                  period === 'week' ? INCOME_PERIOD.THIS_WEEK : 
+                  INCOME_PERIOD.THIS_MONTH
+        })
+      ]);
+
+      setIncomeSummary(summaryData);
+      setIncomeStats(statsData);
+
+    } catch (error: any) {
+      console.error('加载收入数据失败:', error);
+      showSnackbar(error.message || '加载收入数据失败', 'error');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // 下拉刷新
+  const handleRefresh = () => {
+    loadIncomeData(true);
+  };
+
+  // 计算当前周期的收入和订单数
+  const getCurrentPeriodData = () => {
+    if (!incomeSummary || !incomeStats) {
+      return { income: 0, orders: 0, hours: '0h 0m' };
+    }
+
+    let income = 0;
+    switch (period) {
+      case 'today':
+        income = incomeSummary.today;
+        break;
+      case 'week':
+        income = incomeSummary.this_week;
+        break;
+      case 'month':
+        income = incomeSummary.this_month;
+        break;
+    }
+
+    return {
+      income,
+      orders: incomeStats.total_orders,
+      hours: formatWorkHours(incomeStats.total_orders), // 简化计算：假设每单2小时
+    };
+  };
+
+  // 格式化工作时长
+  const formatWorkHours = (orders: number): string => {
+    const totalMinutes = orders * 120; // 假设每单平均2小时
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  // 获取图表数据
+  const getChartData = () => {
+    if (!incomeStats || !incomeStats.daily_income || incomeStats.daily_income.length === 0) {
+      // 返回空数据
+      return [];
+    }
+
+    const maxAmount = Math.max(...incomeStats.daily_income.map(d => d.amount));
+    
+    return incomeStats.daily_income.map(item => ({
+      label: new Date(item.date).getDate().toString(),
+      height: maxAmount > 0 ? `${(item.amount / maxAmount) * 100}%` : '0%',
+      active: false,
+      value: `¥${item.amount.toFixed(0)}`,
+    }));
+  };
+
+  const currentData = getCurrentPeriodData();
+  const chartData = getChartData();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.profileContainer}>
-          <Image 
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsqNskWzXKDs0_TDyqnJPTWL95SrQpFsvYFLRbcy-4zfczeXP2iDZvUFR04oFGlLXE_wgkwrTy0H49GqcjhOU5MUouVHHmbCV634QAf2Vs_6O7Zuxnz5vSh6F9KsJUCMVXQZS9oLiwXKOPrXWoyv46qx5b4X_02pJGFvpVyLU564T5DsvXxtatrQ5_LuxjircqxhnzAfzhGBEWTtgXzYlz1bWB4gynxz9nkSIzuOb3IFwcovNk0PTJstQXjtSKg_e-223WLeb9uBY' }} 
-            style={styles.profileImage} 
-          />
-        </View>
-        <Text style={styles.headerTitle}>收入概览</Text>
-        <TouchableOpacity style={styles.settingsButton}>
-          <MaterialIcons name="settings" size={24} color="#9CA3AF" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Period Selector */}
-        <View style={styles.periodSelector}>
-          {['today', 'week', 'month'].map((p) => (
-            <TouchableOpacity 
-              key={p} 
-              style={[styles.periodOption, period === p && styles.periodOptionActive]}
-              onPress={() => setPeriod(p)}
-            >
-              <Text style={[styles.periodText, period === p && styles.periodTextActive]}>
-                {p === 'today' ? '今日' : p === 'week' ? '本周' : '本月'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Total Income */}
-        <View style={styles.totalIncomeContainer}>
-          <View style={styles.totalLabelRow}>
-            <Text style={styles.totalLabel}>今日总收入</Text>
-            <TouchableOpacity>
-              <MaterialIcons name="visibility" size={18} color="#9CA3AF" />
-            </TouchableOpacity>
+    <PaperProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.profileContainer}>
+            <Image 
+              source={{ uri: user?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsqNskWzXKDs0_TDyqnJPTWL95SrQpFsvYFLRbcy-4zfczeXP2iDZvUFR04oFGlLXE_wgkwrTy0H49GqcjhOU5MUouVHHmbCV634QAf2Vs_6O7Zuxnz5vSh6F9KsJUCMVXQZS9oLiwXKOPrXWoyv46qx5b4X_02pJGFvpVyLU564T5DsvXxtatrQ5_LuxjircqxhnzAfzhGBEWTtgXzYlz1bWB4gynxz9nkSIzuOb3IFwcovNk0PTJstQXjtSKg_e-223WLeb9uBY' }} 
+              style={styles.profileImage} 
+            />
           </View>
-          <Text style={styles.totalAmount}>¥ 1,280.00</Text>
+          <Text style={styles.headerTitle}>收入概览</Text>
+          <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings' as any)}>
+            <MaterialIcons name="settings" size={24} color="#9CA3AF" />
+          </TouchableOpacity>
         </View>
 
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#FEFCE8', overflow: 'hidden' }]}>
-              <MaterialIcons name="receipt-long" size={20} color="#D97706" />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>加载收入数据...</Text>
+          </View>
+        ) : (
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
+          >
+            {/* Period Selector */}
+            <View style={styles.periodSelector}>
+              {(['today', 'week', 'month'] as const).map((p) => (
+                <TouchableOpacity 
+                  key={p} 
+                  style={[styles.periodOption, period === p && styles.periodOptionActive]}
+                  onPress={() => setPeriod(p)}
+                >
+                  <Text style={[styles.periodText, period === p && styles.periodTextActive]}>
+                    {p === 'today' ? '今日' : p === 'week' ? '本周' : '本月'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            <Text style={styles.statValue}>5</Text>
-            <Text style={styles.statLabel}>完成订单</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#F3F4F6' }]}>
-              <MaterialIcons name="schedule" size={20} color="#4B5563" />
-            </View>
-            <Text style={styles.statValue}>3h 40m</Text>
-            <Text style={styles.statLabel}>工作时长</Text>
-          </View>
-        </View>
 
-        {/* Income Trend Chart */}
-        <View style={styles.chartCard}>
-          <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>收入趋势</Text>
-            <View style={styles.chartBadge}>
-              <Text style={styles.chartBadgeText}>24小时</Text>
+            {/* Total Income */}
+            <View style={styles.totalIncomeContainer}>
+              <View style={styles.totalLabelRow}>
+                <Text style={styles.totalLabel}>
+                  {period === 'today' ? '今日总收入' : period === 'week' ? '本周总收入' : '本月总收入'}
+                </Text>
+                <TouchableOpacity>
+                  <MaterialIcons name="visibility" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.totalAmount}>¥ {currentData.income.toFixed(2)}</Text>
             </View>
-          </View>
+
+            {/* Stats Grid */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <View style={[styles.statIcon, { backgroundColor: '#FEFCE8', overflow: 'hidden' }]}>
+                  <MaterialIcons name="receipt-long" size={20} color="#D97706" />
+                </View>
+                <Text style={styles.statValue}>{currentData.orders}</Text>
+                <Text style={styles.statLabel}>完成订单</Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={[styles.statIcon, { backgroundColor: '#F3F4F6' }]}>
+                  <MaterialIcons name="schedule" size={20} color="#4B5563" />
+                </View>
+                <Text style={styles.statValue}>{currentData.hours}</Text>
+                <Text style={styles.statLabel}>工作时长</Text>
+              </View>
+            </View>
+
+            {/* Income Trend Chart */}
+            <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.chartTitle}>收入趋势</Text>
+                <View style={styles.chartBadge}>
+                  <Text style={styles.chartBadgeText}>
+                    {period === 'today' ? '24小时' : period === 'week' ? '7天' : '30天'}
+                  </Text>
+                </View>
+              </View>
           
           <View style={styles.chartContainer}>
-            {CHART_DATA.map((item, index) => (
-              <View key={index} style={styles.chartColumn}>
-                {item.active && (
-                   <View style={styles.chartTooltip}>
-                     <Text style={styles.chartTooltipText}>{item.value}</Text>
-                   </View>
-                )}
-                <View style={[
-                  styles.chartBar, 
-                  { height: item.height },
-                  item.active && styles.chartBarActive
-                ]} />
-                <Text style={[styles.chartLabel, item.active && styles.chartLabelActive]}>{item.label}</Text>
+            {chartData.length > 0 ? (
+              chartData.map((item, index) => (
+                <View key={index} style={styles.chartColumn}>
+                  {item.active && (
+                     <View style={styles.chartTooltip}>
+                       <Text style={styles.chartTooltipText}>{item.value}</Text>
+                     </View>
+                  )}
+                  <View style={[
+                    styles.chartBar, 
+                    { height: item.height as any },
+                    item.active && styles.chartBarActive
+                  ]} />
+                  <Text style={[styles.chartLabel, item.active && styles.chartLabelActive]}>{item.label}</Text>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyChart}>
+                <MaterialIcons name="bar-chart" size={48} color={COLORS.textSec} style={{ opacity: 0.3 }} />
+                <Text style={styles.emptyChartText}>暂无数据</Text>
               </View>
-            ))}
+            )}
           </View>
         </View>
 
         {/* History Data */}
-        <View style={styles.historySection}>
-          <Text style={styles.sectionTitle}>历史数据</Text>
-          
-          <View style={styles.historyCard}>
-            <View style={styles.historyLeft}>
-              <View style={styles.historyIcon}>
-                <MaterialCommunityIcons name="calendar-week" size={24} color="#9CA3AF" />
+        {incomeSummary && (
+          <View style={styles.historySection}>
+            <Text style={styles.sectionTitle}>历史数据</Text>
+            
+            <View style={styles.historyCard}>
+              <View style={styles.historyLeft}>
+                <View style={styles.historyIcon}>
+                  <MaterialCommunityIcons name="calendar-week" size={24} color="#9CA3AF" />
+                </View>
+                <View>
+                  <Text style={styles.historyTitle}>本周收入</Text>
+                  <Text style={styles.historySub}>近7天累计</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.historyTitle}>本周收入</Text>
-                <Text style={styles.historySub}>12月4日 - 12月10日</Text>
-              </View>
+              <Text style={styles.historyAmount}>¥ {incomeSummary.this_week.toFixed(2)}</Text>
             </View>
-            <Text style={styles.historyAmount}>¥ 5,400.00</Text>
-          </View>
 
-          <View style={[styles.historyCard, { marginTop: 12 }]}>
-            <View style={styles.historyLeft}>
-              <View style={styles.historyIcon}>
-                <MaterialCommunityIcons name="calendar-month" size={24} color="#9CA3AF" />
+            <View style={[styles.historyCard, { marginTop: 12 }]}>
+              <View style={styles.historyLeft}>
+                <View style={styles.historyIcon}>
+                  <MaterialCommunityIcons name="calendar-month" size={24} color="#9CA3AF" />
+                </View>
+                <View>
+                  <Text style={styles.historyTitle}>本月收入</Text>
+                  <Text style={styles.historySub}>本月累计</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.historyTitle}>本月收入</Text>
-                <Text style={styles.historySub}>2023年 12月</Text>
-              </View>
+              <Text style={styles.historyAmount}>¥ {incomeSummary.this_month.toFixed(2)}</Text>
             </View>
-            <Text style={styles.historyAmount}>¥ 21,350.00</Text>
+
+            <View style={[styles.historyCard, { marginTop: 12 }]}>
+              <View style={styles.historyLeft}>
+                <View style={styles.historyIcon}>
+                  <MaterialCommunityIcons name="wallet" size={24} color="#22C55E" />
+                </View>
+                <View>
+                  <Text style={styles.historyTitle}>可提现余额</Text>
+                  <Text style={styles.historySub}>可立即提现</Text>
+                </View>
+              </View>
+              <Text style={[styles.historyAmount, { color: COLORS.success }]}>
+                ¥ {incomeSummary.available_balance.toFixed(2)}
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Details Button */}
         <TouchableOpacity 
@@ -158,7 +324,26 @@ export default function IncomeScreen() {
         </TouchableOpacity>
 
       </ScrollView>
-    </SafeAreaView>
+        )}
+
+        {/* Snackbar */}
+        <Portal>
+          <Snackbar
+            visible={snackbar.visible}
+            onDismiss={hideSnackbar}
+            duration={3000}
+            style={{
+              backgroundColor: 
+                snackbar.type === 'success' ? COLORS.success :
+                snackbar.type === 'error' ? COLORS.error :
+                COLORS.info,
+            }}
+          >
+            {snackbar.message}
+          </Snackbar>
+        </Portal>
+      </SafeAreaView>
+    </PaperProvider>
   );
 }
 
@@ -369,6 +554,29 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: '700',
+  },
+  emptyChart: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyChartText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: COLORS.textSec,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.backgroundLight,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: COLORS.textSec,
+    fontWeight: '500',
   },
   historySection: {
     marginBottom: 32,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Snackbar, Portal, Dialog, Button, Provider as PaperProvider } from 'react-native-paper';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -34,6 +35,28 @@ export default function OrderDetailsScreen() {
   const [isRejecting, setIsRejecting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
+  // ✅ Snackbar 状态管理
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info',
+  });
+
+  // ✅ Dialog 状态管理
+  const [acceptDialog, setAcceptDialog] = useState(false);
+  const [rejectDialog, setRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
+  // ✅ 显示 Snackbar
+  const showSnackbar = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  // ✅ 隐藏 Snackbar
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+  
   // Get bookingId from route params
   const bookingId = (route.params as any)?.orderId || (route.params as any)?.bookingId;
 
@@ -51,7 +74,7 @@ export default function OrderDetailsScreen() {
       dispatch(setCurrentOrder(orderDetail));
     } catch (error: any) {
       console.error('加载订单详情失败:', error);
-      Alert.alert('错误', error.message || '加载订单详情失败');
+      showSnackbar(error.message || '加载订单详情失败', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -60,119 +83,121 @@ export default function OrderDetailsScreen() {
   // Accept Order
   const handleAcceptOrder = async () => {
     if (!currentOrder) return;
+    setAcceptDialog(true);
+  };
 
-    Alert.alert(
-      '接受订单',
-      '确认接受此订单吗？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确认接受',
-          onPress: async () => {
-            try {
-              setIsAccepting(true);
-              const response = await ordersApi.acceptOrder(currentOrder.id);
-              
-              // Update Redux
-              dispatch(updateOrder({
-                id: currentOrder.id,
-                updates: { status: BookingStatus.CONFIRMED }
-              }));
-              
-              Alert.alert('成功', '订单已接受！', [
-                { text: '确定', onPress: () => navigation.goBack() }
-              ]);
-            } catch (error: any) {
-              console.error('接单失败:', error);
-              Alert.alert('错误', error.message || '接单失败');
-            } finally {
-              setIsAccepting(false);
-            }
-          }
-        }
-      ]
-    );
+  const confirmAcceptOrder = async () => {
+    if (!currentOrder) return;
+
+    try {
+      setIsAccepting(true);
+      setAcceptDialog(false);
+      const response = await ordersApi.acceptOrder(currentOrder.id);
+      
+      // Update Redux
+      dispatch(updateOrder({
+        id: currentOrder.id,
+        updates: { status: BookingStatus.CONFIRMED }
+      }));
+      
+      showSnackbar('订单已接受！', 'success');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
+    } catch (error: any) {
+      console.error('接单失败:', error);
+      showSnackbar(error.message || '接单失败', 'error');
+    } finally {
+      setIsAccepting(false);
+    }
   };
 
   // Reject Order
   const handleRejectOrder = async () => {
     if (!currentOrder) return;
+    setRejectReason(''); // 清空之前的输入
+    setRejectDialog(true);
+  };
 
-    Alert.prompt(
-      '拒绝订单',
-      '请输入拒绝原因：',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确认拒绝',
-          onPress: async (reason) => {
-            if (!reason || reason.trim() === '') {
-              Alert.alert('提示', '请输入拒绝原因');
-              return;
-            }
+  const confirmRejectOrder = async () => {
+    if (!currentOrder) return;
 
-            try {
-              setIsRejecting(true);
-              await ordersApi.rejectOrder(currentOrder.id, { reason: reason.trim() });
-              
-              // Update Redux
-              dispatch(updateOrder({
-                id: currentOrder.id,
-                updates: { status: BookingStatus.CANCELLED }
-              }));
-              
-              Alert.alert('成功', '订单已拒绝', [
-                { text: '确定', onPress: () => navigation.goBack() }
-              ]);
-            } catch (error: any) {
-              console.error('拒单失败:', error);
-              Alert.alert('错误', error.message || '拒单失败');
-            } finally {
-              setIsRejecting(false);
-            }
-          }
-        }
-      ],
-      'plain-text'
-    );
+    if (!rejectReason || rejectReason.trim() === '') {
+      showSnackbar('请输入拒绝原因', 'info');
+      return;
+    }
+
+    try {
+      setIsRejecting(true);
+      setRejectDialog(false);
+      await ordersApi.rejectOrder(currentOrder.id, { reason: rejectReason.trim() });
+      
+      // Update Redux
+      dispatch(updateOrder({
+        id: currentOrder.id,
+        updates: { status: BookingStatus.CANCELLED }
+      }));
+      
+      showSnackbar('订单已拒绝', 'success');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
+    } catch (error: any) {
+      console.error('拒单失败:', error);
+      showSnackbar(error.message || '拒单失败', 'error');
+    } finally {
+      setIsRejecting(false);
+    }
   };
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.backgroundLight }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ marginTop: 16, color: COLORS.textSec }}>加载中...</Text>
+        <Text style={{ marginTop: 16, color: COLORS.textSec, fontSize: 16 }}>加载订单详情...</Text>
       </View>
     );
   }
 
   if (!currentOrder) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: COLORS.textSec }}>订单不存在</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
-          <Text style={{ color: COLORS.primary }}>返回</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.backgroundLight, padding: 20 }]}>
+        <MaterialIcons name="inbox" size={64} color={COLORS.textSec} style={{ opacity: 0.5 }} />
+        <Text style={{ marginTop: 16, color: COLORS.textMain, fontSize: 18, fontWeight: '600' }}>订单不存在</Text>
+        <Text style={{ marginTop: 8, color: COLORS.textSec, fontSize: 14, textAlign: 'center' }}>该订单可能已被删除或不存在</Text>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={{ 
+            marginTop: 24, 
+            paddingHorizontal: 24, 
+            paddingVertical: 12, 
+            backgroundColor: COLORS.primary, 
+            borderRadius: 24 
+          }}
+        >
+          <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>返回订单列表</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>订单 #{currentOrder.booking_no}</Text>
-          <TouchableOpacity style={styles.iconButton}>
-            <MaterialIcons name="shield" size={24} color={COLORS.textMain} />
-          </TouchableOpacity>
-        </View>
+    <PaperProvider>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>订单 #{currentOrder.booking_no}</Text>
+            <TouchableOpacity style={styles.iconButton}>
+              <MaterialIcons name="shield" size={24} color={COLORS.textMain} />
+            </TouchableOpacity>
+          </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Status Section */}
@@ -333,7 +358,82 @@ export default function OrderDetailsScreen() {
           </View>
         )}
       </SafeAreaView>
+
+      {/* ✅ Accept Order Dialog */}
+      <Portal>
+        <Dialog visible={acceptDialog} onDismiss={() => setAcceptDialog(false)}>
+          <Dialog.Title>接受订单</Dialog.Title>
+          <Dialog.Content>
+            <Text>确认接受此订单吗？</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setAcceptDialog(false)}>取消</Button>
+            <Button onPress={confirmAcceptOrder} loading={isAccepting}>确认接受</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* ✅ Reject Order Dialog */}
+      <Portal>
+        <Dialog visible={rejectDialog} onDismiss={() => setRejectDialog(false)}>
+          <Dialog.Title>拒绝订单</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ marginBottom: 12, color: COLORS.textSec }}>请输入拒绝原因：</Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                minHeight: 80,
+                textAlignVertical: 'top',
+                backgroundColor: COLORS.surfaceLight,
+              }}
+              placeholder="例如：技师档期已满，无法接单"
+              placeholderTextColor={COLORS.textSec}
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              multiline
+              numberOfLines={3}
+              maxLength={200}
+              autoFocus
+            />
+            <Text style={{ marginTop: 8, color: COLORS.textSec, fontSize: 12 }}>
+              {rejectReason.length}/200
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRejectDialog(false)}>取消</Button>
+            <Button 
+              onPress={confirmRejectOrder} 
+              loading={isRejecting}
+              disabled={!rejectReason.trim()}
+            >
+              确认拒绝
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* ✅ Snackbar */}
+      <Portal>
+        <Snackbar
+          visible={snackbar.visible}
+          onDismiss={hideSnackbar}
+          duration={3000}
+          style={{
+            backgroundColor: 
+              snackbar.type === 'success' ? '#22C55E' : 
+              snackbar.type === 'error' ? '#EF4444' : 
+              '#3B82F6',
+          }}
+        >
+          {snackbar.message}
+        </Snackbar>
+      </Portal>
     </View>
+    </PaperProvider>
   );
 }
 
