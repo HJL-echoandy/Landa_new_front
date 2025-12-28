@@ -79,6 +79,14 @@ cython_debug/
 !env.example
 !.env.example
 
+# ========== Firebase / Google Cloud Credentials ==========
+# IMPORTANT: Never commit service account keys!
+firebase-service-account.json
+*-service-account.json
+service-account-*.json
+google-credentials.json
+firebase-adminsdk-*.json
+
 # ========== IDEs ==========
 .idea/
 .vscode/
