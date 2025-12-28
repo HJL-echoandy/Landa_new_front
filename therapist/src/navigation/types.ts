@@ -13,11 +13,19 @@ export type RootStackParamList = {
   OrderDetails: { orderId: string };
   Navigation: { orderId: string };
   CheckIn: { orderId: string; type: 'arrived' | 'start' | 'complete' };
+  ServiceInProgress: { orderId: string };
+  CustomerFeedback: { 
+    orderId: string; 
+    customerName: string; 
+    customerAvatar?: string;
+    serviceName: string;
+    serviceTime: string;
+  };
   
   // 收入相关
   IncomeDetails: undefined;
   Withdraw: undefined;
-  WithdrawalRecords: undefined;
+  WithdrawHistory: undefined;
   
   // 个人中心相关
   EditProfile: undefined;

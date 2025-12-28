@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Linking, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import orderApi from '../../api/orders';
+import { OrderDetail } from '../../types/order';
+import { format } from 'date-fns';
 
 const { width, height } = Dimensions.get('window');
 
 const COLORS = {
-  primary: '#135BEC', // Blue from design
-  primaryDark: '#0E45B5',
+  primary: '#FFE600', // Landa Yellow (明亮黄)
+  primaryDark: '#EAB308',
   backgroundLight: '#F8F9FC',
   surfaceLight: '#FFFFFF',
   textMain: '#0F172A', // Slate 900
@@ -22,10 +25,155 @@ const COLORS = {
 export default function NavigationScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const orderId = (route.params as any)?.orderId || '8493';
+  const orderId = (route.params as any)?.orderId;
 
-  // Mock state for stepper
-  const currentStep = 1; // 1: On Way, 2: Arrive, 3: Service, 4: Done
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (orderId) {
+      loadOrder();
+    }
+  }, [orderId]);
+
+  // 监听页面聚焦，自动刷新订单数据
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (orderId) {
+        console.log('🔄 NavigationScreen 页面聚焦，重新加载订单数据');
+        loadOrder();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, orderId]);
+
+  const loadOrder = async () => {
+    try {
+      const res = await orderApi.getOrderDetail(orderId);
+      setOrder(res);
+    } catch (error) {
+      console.error('Failed to load order:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNavigate = async () => {
+    if (!order) return;
+    
+    const lat = order.address_lat || 0;
+    const lng = order.address_lng || 0;
+    const label = order.address_detail;
+
+    // 定义各个地图 App 的 URL Scheme
+    const mapApps = [
+      {
+        name: '高德地图',
+        androidUrl: `androidamap://viewMap?sourceApplication=Landa&poiname=${encodeURIComponent(label)}&lat=${lat}&lon=${lng}&dev=0`,
+        iosUrl: `iosamap://viewMap?sourceApplication=Landa&poiname=${encodeURIComponent(label)}&lat=${lat}&lon=${lng}&dev=0`,
+      },
+      {
+        name: '百度地图',
+        androidUrl: `baidumap://map/direction?destination=${lat},${lng}&coord_type=gcj02&mode=driving&src=Landa`,
+        iosUrl: `baidumap://map/direction?destination=${lat},${lng}&coord_type=gcj02&mode=driving&src=Landa`,
+      },
+      {
+        name: '腾讯地图',
+        androidUrl: `qqmap://map/routeplan?type=drive&to=${encodeURIComponent(label)}&tocoord=${lat},${lng}&referer=Landa`,
+        iosUrl: `qqmap://map/routeplan?type=drive&to=${encodeURIComponent(label)}&tocoord=${lat},${lng}&referer=Landa`,
+      },
+    ];
+
+    // 检测已安装的地图 App
+    const availableApps = [];
+    for (const app of mapApps) {
+      const url = Platform.OS === 'android' ? app.androidUrl : app.iosUrl;
+      try {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          availableApps.push({ ...app, url });
+        }
+      } catch (e) {
+        console.log(`检测 ${app.name} 失败:`, e);
+      }
+    }
+
+    // 如果有可用的地图 App
+    if (availableApps.length > 0) {
+      if (availableApps.length === 1) {
+        // 只有一个可用，直接打开
+        Linking.openURL(availableApps[0].url);
+      } else {
+        // 多个可用，让用户选择
+        Alert.alert(
+          '选择地图应用',
+          '请选择要使用的导航应用',
+          [
+            ...availableApps.map(app => ({
+              text: app.name,
+              onPress: () => Linking.openURL(app.url),
+            })),
+            {
+              text: '取消',
+              style: 'cancel',
+            },
+          ]
+        );
+      }
+    } else {
+      // 没有安装任何地图 App，使用网页版高德地图
+      Alert.alert(
+        '未检测到地图应用',
+        '将使用网页版地图导航',
+        [
+          {
+            text: '确定',
+            onPress: () => {
+              const webUrl = `https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(label)}`;
+              Linking.openURL(webUrl);
+            },
+          },
+          {
+            text: '取消',
+            style: 'cancel',
+          },
+        ]
+      );
+    }
+  };
+
+  const handleCall = () => {
+    if (order?.customer_phone) {
+      Linking.openURL(`tel:${order.customer_phone}`);
+    }
+  };
+
+  const handleChat = () => {
+    if (order) {
+      // 导航到聊天页面 (假设已有 Chat 路由)
+      // (navigation as any).navigate('Chat', { 
+      //   customerId: order.user_id, // 注意：后端返回的字段可能需要确认
+      //   customerName: order.customer_name,
+      //   orderId: order.id
+      // });
+      console.log('Navigate to Chat with customer:', order.customer_name);
+    }
+  };
+
+  // 1: On Way, 2: Arrive (Ready to Start), 3: Service, 4: Done
+  const getCurrentStep = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 1;        // 已确认 → 显示"到达打卡"
+      case 'en_route': return 2;         // 已到达 → 显示"开始服务" ✅ 修复
+      case 'arrived': return 2;          // 已到达 → 显示"开始服务"
+      case 'in_progress': return 3;      // 服务中 → 显示"完成服务"
+      case 'completed': return 4;        // 已完成
+      default: return 1;
+    }
+  };
+
+  const currentStep = order ? getCurrentStep(order.status) : 1;
 
   const renderStep = (step: number, icon: any, label: string, isActive: boolean, isCompleted: boolean) => (
     <View style={styles.stepItem}>
@@ -47,6 +195,22 @@ export default function NavigationScreen() {
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!order) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>订单不存在</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header (Absolute) */}
@@ -58,32 +222,79 @@ export default function NavigationScreen() {
           >
             <MaterialIcons name="arrow-back" size={24} color={COLORS.textMain} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Order #{orderId}</Text>
+          <Text style={styles.headerTitle}>Order #{order.booking_no.slice(-6)}</Text>
           <View style={{ width: 40 }} /> 
         </View>
       </SafeAreaView>
 
       {/* Map Section (Top 45%) */}
       <View style={styles.mapSection}>
+        {/* 暂时使用静态图片 - 等配置 Google Maps API Key 后启用真实地图 */}
         <Image 
-          source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmCDTGV3pPUWS4V9KMPcOZ9ffndoTKDolz1Q0R-tpwquTWTLb8CU8rvBuOHd-BUq26kzRAS5Y9gldXSoRrttn_hon-mzPVofqJFeolAZwYokCmhWrq_0zoE_-i5bNBrqVzatQ2dlkE78pejs3ozUsCVGaN4LxR96NH8F_x1Ccaa1APFOKtu2uga457SluFuJ4v2xVKdTV_2oVIkJU8flViSfh7eNXx29lnPj9ddWp7Qlkgu9xz26CS27SCjUecOarWWn5-Z9ViLVs' }} 
+          source={{ uri: 'https://via.placeholder.com/400x600/E2E8F0/64748B?text=Map+Area' }} 
           style={styles.mapImage} 
         />
+        
         <View style={styles.mapOverlay} />
         
         {/* Navigate FAB */}
-        <TouchableOpacity style={styles.navigateFab}>
+        <TouchableOpacity style={styles.navigateFab} onPress={handleNavigate}>
           <MaterialIcons name="near-me" size={20} color="white" />
           <Text style={styles.navigateFabText}>Navigate</Text>
         </TouchableOpacity>
 
-        {/* Current Location Marker */}
+        {/* 技师位置标记（模拟） */}
         <View style={styles.markerContainer}>
           <View style={styles.pulseRing}>
             <View style={styles.markerDot} />
           </View>
         </View>
       </View>
+
+      {/* 
+        TODO: 配置 Google Maps API Key 后启用真实地图
+        
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.mapImage}
+          region={{
+            latitude: currentLocation?.latitude || order.address_lat || 0,
+            longitude: currentLocation?.longitude || order.address_lng || 0,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          showsUserLocation={true}
+          showsMyLocationButton={false}
+          followsUserLocation={true}
+        >
+          {order.address_lat && order.address_lng && (
+            <Marker
+              coordinate={{
+                latitude: order.address_lat,
+                longitude: order.address_lng,
+              }}
+              title={order.customer_name}
+              description={order.address_detail}
+            >
+              <View style={styles.destinationMarker}>
+                <MaterialIcons name="place" size={40} color="#EF4444" />
+              </View>
+            </Marker>
+          )}
+          {currentLocation && (
+            <Marker
+              coordinate={currentLocation}
+              title="我的位置"
+            >
+              <View style={styles.currentLocationMarker}>
+                <View style={styles.pulseRing}>
+                  <View style={styles.markerDot} />
+                </View>
+              </View>
+            </Marker>
+          )}
+        </MapView>
+      */}
 
       {/* Bottom Sheet (Bottom 55%) */}
       <View style={styles.bottomSheet}>
@@ -96,28 +307,30 @@ export default function NavigationScreen() {
           {/* Progress Stepper */}
           <View style={styles.stepperContainer}>
             <View style={styles.stepperLine} />
-            {renderStep(1, 'directions-car', 'ON WAY', true, false)}
-            {renderStep(2, 'location-on', 'ARRIVE', false, false)}
-            {renderStep(3, 'spa', 'SERVICE', false, false)}
-            {renderStep(4, 'check', 'DONE', false, false)}
+            {renderStep(1, 'directions-car', 'ON WAY', currentStep === 1, currentStep > 1)}
+            {renderStep(2, 'location-on', 'ARRIVE', currentStep === 2, currentStep > 2)}
+            {renderStep(3, 'spa', 'SERVICE', currentStep === 3, currentStep > 3)}
+            {renderStep(4, 'check', 'DONE', currentStep === 4, currentStep > 4)}
           </View>
 
           {/* Info Header */}
           <View style={styles.infoHeader}>
             <View style={styles.timeContainer}>
               <MaterialIcons name="schedule" size={20} color={COLORS.primary} />
-              <Text style={styles.timeText}>14:00 Today</Text>
+              <Text style={styles.timeText}>
+                {order.start_time ? order.start_time.slice(0, 5) : '--:--'} Today
+              </Text>
             </View>
             <View style={styles.distanceBadge}>
               <MaterialIcons name="straighten" size={14} color={COLORS.textSec} />
-              <Text style={styles.distanceText}>2.4 km</Text>
+              <Text style={styles.distanceText}>{order.service_duration} min</Text>
             </View>
           </View>
 
           {/* Address */}
           <View style={styles.addressContainer}>
-            <Text style={styles.addressMain}>123 Wellness Blvd, Apt 4B</Text>
-            <Text style={styles.addressSub}>Downtown District</Text>
+            <Text style={styles.addressMain}>{order.address_detail}</Text>
+            <Text style={styles.addressSub}>{order.address_contact} • {order.address_phone}</Text>
           </View>
 
           {/* Divider */}
@@ -126,35 +339,35 @@ export default function NavigationScreen() {
           {/* Client Info */}
           <View style={styles.clientContainer}>
             <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAzCsGw3vevrvNcFC8ggyJBA82fNJvecIncWOxlr2DCcZo3NnNcIp6VmJtA6Vgh28x_Jx9F5Cj4Z52IqKuXxMXqDYPBI0r6UnX-q-ZpIptI1ACrPcFg989XLXhxJJoTL4taFod5Dk2oBamWbuFHUrkgX8VslkWChoyV2ZnDGRf-CXq5nla1NglTe04G82DE5dK5MgAKRzsqnjxXV3z32V_lrbN7qErm3Qo8QJWPueBWWSicQ-2MRxT1-OGJHOT-1FGX5ckBrCmFBy8' }} 
+              source={{ uri: order.customer_avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAzCsGw3vevrvNcFC8ggyJBA82fNJvecIncWOxlr2DCcZo3NnNcIp6VmJtA6Vgh28x_Jx9F5Cj4Z52IqKuXxMXqDYPBI0r6UnX-q-ZpIptI1ACrPcFg989XLXhxJJoTL4taFod5Dk2oBamWbuFHUrkgX8VslkWChoyV2ZnDGRf-CXq5nla1NglTe04G82DE5dK5MgAKRzsqnjxXV3z32V_lrbN7qErm3Qo8QJWPueBWWSicQ-2MRxT1-OGJHOT-1FGX5ckBrCmFBy8' }} 
               style={styles.clientAvatar} 
             />
             <View style={styles.clientInfo}>
-              <Text style={styles.clientName}>Sarah Jenkins</Text>
+              <Text style={styles.clientName}>{order.customer_name}</Text>
               <View style={styles.ratingRow}>
-                <MaterialIcons name="star" size={14} color={COLORS.yellow} />
-                <Text style={styles.ratingText}>4.9</Text>
-                <Text style={styles.orderCount}>(12 orders)</Text>
+                <Text style={styles.ratingText}>{order.service_name}</Text>
               </View>
             </View>
             <View style={styles.contactActions}>
-              <TouchableOpacity style={styles.contactBtn}>
+              <TouchableOpacity style={styles.contactBtn} onPress={handleCall}>
                 <MaterialIcons name="call" size={20} color={COLORS.textSec} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.contactBtn}>
+              <TouchableOpacity style={styles.contactBtn} onPress={handleChat}>
                 <MaterialIcons name="chat-bubble-outline" size={20} color={COLORS.textSec} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Notes */}
-          <View style={styles.noteCard}>
-            <MaterialIcons name="info" size={20} color="#CA8A04" style={{ marginTop: 2 }} />
-            <View style={styles.noteContent}>
-              <Text style={styles.noteTitle}>Client Note</Text>
-              <Text style={styles.noteText}>The gate code is #4455. Please park in visitor spot 12 or on the street.</Text>
+          {order.user_note && (
+            <View style={styles.noteCard}>
+              <MaterialIcons name="info" size={20} color="#CA8A04" style={{ marginTop: 2 }} />
+              <View style={styles.noteContent}>
+                <Text style={styles.noteTitle}>Client Note</Text>
+                <Text style={styles.noteText}>{order.user_note}</Text>
+              </View>
             </View>
-          </View>
+          )}
           
           {/* Spacer for sticky footer */}
           <View style={{ height: 100 }} />
@@ -164,13 +377,33 @@ export default function NavigationScreen() {
         <View style={styles.footer}>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => navigation.navigate('CheckIn', { orderId, type: 'arrived' } as any)}
+            onPress={() => {
+              let checkType: 'arrived' | 'start' | 'complete' = 'arrived';
+              if (currentStep === 1) {
+                checkType = 'arrived';
+              } else if (currentStep === 2) {
+                checkType = 'start';
+              } else if (currentStep === 3) {
+                checkType = 'complete';
+              }
+              
+              console.log('🔔 导航页面打卡按钮点击 - currentStep:', currentStep, 'checkType:', checkType, 'orderId:', order.id);
+              
+              navigation.navigate('CheckIn', { 
+                orderId: order.id, 
+                type: checkType 
+              } as any);
+            }}
           >
-            <MaterialIcons name="location-on" size={20} color="white" />
-            <Text style={styles.actionButtonText}>到达打卡 (Arrive)</Text>
+            <MaterialIcons name="location-on" size={20} color="black" />
+            <Text style={styles.actionButtonText}>
+              {currentStep === 1 ? '到达打卡 (Arrive)' : 
+               currentStep === 2 ? '开始服务 (Start)' : 
+               currentStep === 3 ? '完成服务 (Complete)' : '已完成'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.helpButton}>
-            <Text style={styles.helpText}>Trouble finding location? Contact Support</Text>
+            <Text style={styles.helpText}>遇到问题？联系客服</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -261,10 +494,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pulseRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(19, 91, 236, 0.2)', // Primary color with opacity
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 230, 0, 0.3)', // Landa Yellow with opacity
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -273,13 +506,25 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     backgroundColor: COLORS.primary,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: 'white',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  // 技师当前位置标记
+  currentLocationMarker: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // 客户地址标记
+  destinationMarker: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomSheet: {
     flex: 1,
@@ -505,7 +750,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   actionButtonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 18,
     fontWeight: '700',
   },
