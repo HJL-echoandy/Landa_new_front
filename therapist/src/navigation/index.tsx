@@ -25,12 +25,16 @@ import NavigationScreen from '../screens/orders/NavigationScreen';
 
 import CheckInScreen from '../screens/orders/CheckInScreen';
 
+import ServiceInProgressScreen from '../screens/orders/ServiceInProgressScreen';
+
+import CustomerFeedbackScreen from '../screens/orders/CustomerFeedbackScreen';
+
 import IncomeDetailsScreen from '../screens/income/IncomeDetailsScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ChatScreen from '../screens/messages/ChatScreen';
 import ScheduleScreen from '../screens/profile/ScheduleScreen';
-import WithdrawScreen from '../screens/income/WithdrawScreen';
-import WithdrawalRecordsScreen from '../screens/income/WithdrawalRecordsScreen';
+import WithdrawScreen from '../screens/finance/WithdrawScreen';
+import WithdrawHistoryScreen from '../screens/finance/WithdrawHistoryScreen';
 import ReviewsScreen from '../screens/profile/ReviewsScreen';
 import StatisticsScreen from '../screens/profile/StatisticsScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
@@ -121,12 +125,14 @@ export default function RootNavigator() {
           <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
           <Stack.Screen name="Navigation" component={NavigationScreen} />
           <Stack.Screen name="CheckIn" component={CheckInScreen} />
+          <Stack.Screen name="ServiceInProgress" component={ServiceInProgressScreen} />
+          <Stack.Screen name="CustomerFeedback" component={CustomerFeedbackScreen} />
           <Stack.Screen name="IncomeDetails" component={IncomeDetailsScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="Schedule" component={ScheduleScreen} />
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
-          <Stack.Screen name="WithdrawalRecords" component={WithdrawalRecordsScreen} />
+          <Stack.Screen name="WithdrawHistory" component={WithdrawHistoryScreen} />
           <Stack.Screen name="Reviews" component={ReviewsScreen} />
           <Stack.Screen name="Statistics" component={StatisticsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

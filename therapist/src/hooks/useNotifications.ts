@@ -14,7 +14,7 @@ import {
   setupNotificationResponseListener,
   setBadgeCount,
   scheduleLocalNotification,
-  setupFirebaseBackgroundHandler,
+  setupFirebaseNotificationHandlers,
 } from '../services/notificationService';
 import notificationApi from '../api/notification';
 import { WebSocketMessage } from '../types/notification';
@@ -38,53 +38,64 @@ export const useNotifications = () => {
 
     console.log('📱 初始化推送通知...');
 
-    // 1. 设置 Firebase 后台消息处理器（只需设置一次）
-    setupFirebaseBackgroundHandler();
-
-    // 2. 注册推送并获取 FCM token
-    const pushToken = await registerForPushNotifications();
-    
-    if (pushToken) {
-      // 3. 上传 token 到后端
-      try {
-        const deviceInfo = getDeviceInfo();
-        await notificationApi.updatePushToken({
-          token: pushToken,
-          ...deviceInfo,
-        });
-        console.log('✅ FCM Push Token 已上传到后端');
-      } catch (error) {
-        console.error('❌ 上传 Push Token 失败:', error);
+    try {
+      // 1. 注册推送并获取 FCM token（这会初始化 Firebase）
+      console.log('🔑 正在获取 FCM Token...');
+      const pushToken = await registerForPushNotifications();
+      console.log('🔑 registerForPushNotifications 返回:', pushToken);
+      
+      // 2. 设置 Firebase 通知交互处理器（在 Firebase 初始化之后）
+      console.log('🔧 正在设置 Firebase 通知处理器...');
+      setupFirebaseNotificationHandlers();
+      console.log('✅ Firebase 通知处理器设置完成');
+      
+      if (pushToken) {
+        // 3. 上传 token 到后端
+        try {
+          const deviceInfo = getDeviceInfo();
+          await notificationApi.updatePushToken({
+            token: pushToken,
+            ...deviceInfo,
+          });
+          console.log('✅ FCM Push Token 已上传到后端');
+        } catch (error) {
+          console.error('❌ 上传 Push Token 失败:', error);
+        }
+      } else {
+        console.warn('⚠️ 未获取到 FCM Token');
       }
+
+      // 4. 设置前台通知监听器
+      const receivedSubscription = setupNotificationReceivedListener(
+        // 新订单
+        (data) => {
+          console.log('🔔 新订单通知（前台）:', data);
+          // 可以在这里显示自定义 UI
+        },
+        // 订单取消
+        (data) => {
+          console.log('❌ 订单取消通知（前台）:', data);
+        },
+        // 系统消息
+        (data) => {
+          console.log('📢 系统消息（前台）:', data);
+        }
+      );
+
+      // 5. 设置通知点击监听器
+      const responseSubscription = setupNotificationResponseListener((data) => {
+        console.log('👆 用户点击了通知:', data);
+      });
+
+      // 6. 清理
+      return () => {
+        receivedSubscription.remove();
+        responseSubscription.remove();
+      };
+    } catch (error) {
+      console.error('❌ 初始化推送通知失败:', error);
+      console.error('错误详情:', JSON.stringify(error));
     }
-
-    // 4. 设置前台通知监听器
-    const receivedSubscription = setupNotificationReceivedListener(
-      // 新订单
-      (data) => {
-        console.log('🔔 新订单通知（前台）:', data);
-        // 可以在这里显示自定义 UI
-      },
-      // 订单取消
-      (data) => {
-        console.log('❌ 订单取消通知（前台）:', data);
-      },
-      // 系统消息
-      (data) => {
-        console.log('📢 系统消息（前台）:', data);
-      }
-    );
-
-    // 5. 设置通知点击监听器
-    const responseSubscription = setupNotificationResponseListener((data) => {
-      console.log('👆 用户点击了通知:', data);
-    });
-
-    // 6. 清理
-    return () => {
-      receivedSubscription.remove();
-      responseSubscription.remove();
-    };
   }, [token, user]);
 
   /**

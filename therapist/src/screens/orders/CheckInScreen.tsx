@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Snackbar, Portal, Provider as PaperProvider } from 'react-native-paper';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import * as Location from 'expo-location';
+import ordersApi from '../../api/orders';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 const { width, height } = Dimensions.get('window');
 
 const COLORS = {
-  primary: '#135BEC',
+  primary: '#FFE600', // 改为明亮黄
   backgroundLight: '#F8F9FC',
   surfaceLight: '#FFFFFF',
   textMain: '#0F172A',
@@ -19,7 +23,15 @@ const COLORS = {
 export default function CheckInScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { orderId, type } = (route.params as any) || { orderId: '8493', type: 'arrived' };
+  const { orderId, type } = (route.params as any) || { orderId: null, type: 'arrived' };
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [orderData, setOrderData] = useState<any>(null); // 存储订单数据
+  const [hasUserDecidedOnLocation, setHasUserDecidedOnLocation] = useState(false); // 用户是否已决定位置方案
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   // ✅ Snackbar 状态管理
   const [snackbar, setSnackbar] = useState({
@@ -38,6 +50,142 @@ export default function CheckInScreen() {
     setSnackbar({ ...snackbar, visible: false });
   };
 
+  // 获取当前位置
+  useEffect(() => {
+    requestLocationPermission();
+    // 获取订单数据（用于完成服务后跳转到评价页面）
+    loadOrderData();
+  }, []);
+
+  const loadOrderData = async () => {
+    if (!orderId) return;
+    try {
+      const data = await ordersApi.getOrderDetail(orderId);
+      setOrderData(data);
+    } catch (error) {
+      console.error('获取订单数据失败:', error);
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.warn('⚠️ 位置权限被拒绝');
+        setHasUserDecidedOnLocation(true); // 用户拒绝权限，标记已做出选择
+        Alert.alert('权限被拒绝', '需要位置权限才能进行打卡。打卡时将使用默认坐标。');
+        return;
+      }
+
+      // 检查位置服务是否启用
+      const isEnabled = await Location.hasServicesEnabledAsync();
+      if (!isEnabled) {
+        console.warn('⚠️ 位置服务未启用');
+        Alert.alert(
+          '位置服务未启用',
+          '请在系统设置中开启位置服务（GPS），或打卡时使用默认坐标。',
+          [
+            { 
+              text: '稍后处理', 
+              style: 'cancel',
+              onPress: () => {
+                setHasUserDecidedOnLocation(true);
+                console.log('✅ 用户选择稍后处理');
+              }
+            },
+            { 
+              text: '去设置', 
+              onPress: () => {
+                if (Platform.OS === 'android') {
+                  Linking.openSettings();
+                }
+                setHasUserDecidedOnLocation(true);
+              }
+            }
+          ],
+          {
+            cancelable: true,
+            onDismiss: () => {
+              setHasUserDecidedOnLocation(true);
+              console.log('✅ 用户关闭弹窗');
+            }
+          }
+        );
+        return;
+      }
+
+      showSnackbar('正在获取位置...', 'info');
+
+      // 获取当前位置 - 使用更宽松的精度和超时设置
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced, // 从 High 改为 Balanced（更容易获取）
+        timeInterval: 10000, // 10 秒超时
+        distanceInterval: 0,
+      });
+      
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      showSnackbar('位置获取成功！', 'success');
+      console.log('✅ 位置获取成功:', location.coords);
+      setHasUserDecidedOnLocation(true); // 标记已成功获取位置
+    } catch (error: any) {
+      console.error('❌ 获取位置失败:', error);
+      
+      // 如果用户已经做出选择，不再弹出提示
+      if (hasUserDecidedOnLocation) {
+        console.log('⚠️ 用户已做出位置选择，跳过弹窗');
+        return;
+      }
+      
+      // 提供更友好的错误提示和解决方案
+      Alert.alert(
+        '位置获取失败',
+        '可能原因：\n1. GPS 信号弱（请到室外尝试）\n2. 位置服务未开启\n\n请选择处理方式：',
+        [
+          { 
+            text: '稍后打卡时再试', 
+            style: 'cancel',
+            onPress: () => {
+              setHasUserDecidedOnLocation(true); // 标记用户已做出选择（稍后处理）
+              console.log('✅ 用户选择稍后处理');
+            }
+          },
+          { 
+            text: '使用模拟位置', 
+            onPress: () => {
+              // 开发模式：使用模拟坐标
+              setCurrentLocation({
+                latitude: 39.9042, // 北京天安门示例坐标
+                longitude: 116.4074,
+              });
+              setHasUserDecidedOnLocation(true); // 标记用户已做出选择
+              showSnackbar('已使用模拟位置（仅供测试）', 'info');
+              console.log('✅ 用户选择使用模拟位置');
+            }
+          },
+          {
+            text: '重试',
+            onPress: () => {
+              console.log('🔄 用户选择重试');
+              requestLocationPermission();
+            }
+          },
+        ],
+        { 
+          cancelable: true,
+          onDismiss: () => {
+            // 用户点击外部关闭弹窗，也算做出了选择
+            setHasUserDecidedOnLocation(true);
+            console.log('✅ 用户关闭弹窗，标记已做出选择');
+          }
+        }
+      );
+    }
+  };
+
   // Determine current step based on type
   const getStep = () => {
     switch(type) {
@@ -50,11 +198,107 @@ export default function CheckInScreen() {
 
   const currentStep = getStep();
 
-  const handleAction = () => {
-    showSnackbar('操作成功完成！', 'success');
-    setTimeout(() => {
-      navigation.goBack();
-    }, 1500);
+  const handleAction = async () => {
+    if (!orderId) {
+      showSnackbar('订单 ID 无效', 'error');
+      return;
+    }
+
+    // 如果还没有位置且用户还未做出选择，显示提示
+    if (!currentLocation && !hasUserDecidedOnLocation) {
+      Alert.alert(
+        '位置未获取',
+        '无法获取到精确位置，是否继续打卡？\n（将使用默认坐标）',
+        [
+          { text: '取消', style: 'cancel' },
+          { 
+            text: '继续打卡', 
+            onPress: () => {
+              setHasUserDecidedOnLocation(true); // 标记用户已做出选择
+              performCheckIn({
+                latitude: 0,
+                longitude: 0,
+              });
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    // 如果用户已决定但仍无位置，使用默认坐标
+    if (!currentLocation && hasUserDecidedOnLocation) {
+      await performCheckIn({
+        latitude: 0,
+        longitude: 0,
+      });
+      return;
+    }
+
+    // 有位置，直接打卡
+    await performCheckIn(currentLocation!);
+  };
+
+  const performCheckIn = async (location: { latitude: number; longitude: number }) => {
+    setIsLoading(true);
+
+    try {
+      let checkType: 'arrived' | 'start_service' | 'complete_service' = 'arrived';
+      switch(type) {
+        case 'arrived':
+          checkType = 'arrived';
+          break;
+        case 'start':
+          checkType = 'start_service';
+          break;
+        case 'complete':
+          checkType = 'complete_service';
+          break;
+      }
+
+      // 调用打卡 API
+      await ordersApi.checkin(orderId, {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        check_type: checkType,
+      });
+
+      showSnackbar('打卡成功！', 'success');
+      
+      console.log('✅ 打卡成功 - checkType:', checkType, 'orderId:', orderId);
+      
+      // 延迟跳转
+      setTimeout(() => {
+        // 如果是开始服务打卡，跳转到服务进行中页面
+        if (checkType === 'start_service') {
+          console.log('🚀 准备跳转到 ServiceInProgress 页面, orderId:', orderId);
+          navigation.navigate('ServiceInProgress', { orderId } as any);
+        } 
+        // 如果是完成服务打卡，跳转到客户评价页面
+        else if (checkType === 'complete_service' && orderData) {
+          console.log('🎯 准备跳转到 CustomerFeedback 页面');
+          navigation.navigate('CustomerFeedback', {
+            orderId: orderId,
+            customerName: orderData.customer_name || '客户',
+            customerAvatar: orderData.customer_avatar,
+            serviceName: orderData.service_name || '服务',
+            serviceTime: orderData.booking_date && orderData.start_time 
+              ? `${orderData.booking_date} ${orderData.start_time}`
+              : '今天',
+          } as any);
+        }
+        else {
+          console.log('⬅️ 返回上一页');
+          // 其他情况返回上一页
+          navigation.goBack();
+        }
+      }, 1500);
+    } catch (error: any) {
+      console.error('打卡失败:', error);
+      showSnackbar(error.message || '打卡失败，请重试', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderStep = (step: number, icon: any, label: string, isActive: boolean, isCompleted: boolean) => (
@@ -95,7 +339,7 @@ export default function CheckInScreen() {
         {/* Stepper */}
         <View style={styles.stepperContainer}>
             <View style={styles.stepperLine} />
-            {renderStep(1, 'directions-car', 'ON WAY', currentStep === 1, currentStep > 1)}
+            {renderStep(1, 'directions-car', 'ON WAY', false, currentStep > 1)}
             {renderStep(2, 'location-on', 'ARRIVE', currentStep === 2, currentStep > 2)}
             {renderStep(3, 'spa', 'SERVICE', currentStep === 3, currentStep > 3)}
             {renderStep(4, 'check', 'DONE', currentStep === 4, currentStep > 4)}
@@ -115,21 +359,44 @@ export default function CheckInScreen() {
           
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle}>
-              {currentStep === 2 ? 'Arrived at Location?' : 
-               currentStep === 3 ? 'Start Service?' : 'Complete Service?'}
+              {currentStep === 2 ? '已到达服务地点？' : 
+               currentStep === 3 ? '准备开始服务？' : '服务已完成？'}
             </Text>
             <Text style={styles.cardDesc}>
-              {currentStep === 2 ? 'Please confirm you have arrived at the client\'s location.' : 
-               currentStep === 3 ? 'Please confirm you are ready to start the service.' : 'Please confirm the service is completed.'}
+              {currentStep === 2 ? '请确认您已到达客户所在位置。' : 
+               currentStep === 3 ? '请确认您已准备好开始服务。' : '请确认服务已完成。'}
             </Text>
+            
+            {/* 位置状态指示 */}
+            <View style={styles.locationStatus}>
+              {currentLocation ? (
+                <>
+                  <MaterialIcons name="check-circle" size={20} color={COLORS.green} />
+                  <Text style={styles.locationText}>位置已获取</Text>
+                </>
+              ) : (
+                <>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.locationText}>正在获取位置...</Text>
+                </>
+              )}
+            </View>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.mainButton} onPress={handleAction}>
-          <Text style={styles.buttonText}>
-             {currentStep === 2 ? 'Confirm Arrival' : 
-              currentStep === 3 ? 'Start Service' : 'Complete Service'}
-          </Text>
+        <TouchableOpacity 
+          style={[styles.mainButton, isLoading && { opacity: 0.7 }]} 
+          onPress={handleAction}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="black" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {currentStep === 2 ? '确认到达 (Confirm Arrival)' : 
+               currentStep === 3 ? '开始服务 (Start Service)' : '完成服务 (Complete Service)'}
+            </Text>
+          )}
         </TouchableOpacity>
 
       </ScrollView>
@@ -272,6 +539,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  locationStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FC',
+    borderRadius: 12,
+  },
+  locationText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSec,
+  },
   mainButton: {
     backgroundColor: COLORS.primary,
     height: 56,
@@ -287,7 +569,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: '700',
-    color: 'white',
+    color: 'black',
   },
 });
 

@@ -357,6 +357,21 @@ export default function OrderDetailsScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* ✅ Footer - 已接单/进行中状态：显示"开始导航"按钮 */}
+        {(currentOrder.status === BookingStatus.CONFIRMED || 
+          currentOrder.status === BookingStatus.EN_ROUTE || 
+          currentOrder.status === BookingStatus.IN_PROGRESS) && (
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              style={styles.navigationBtn}
+              onPress={() => navigation.navigate('Navigation', { orderId: currentOrder.id } as any)}
+            >
+              <MaterialIcons name="navigation" size={24} color="black" />
+              <Text style={styles.navigationBtnText}>开始导航</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </SafeAreaView>
 
       {/* ✅ Accept Order Dialog */}
@@ -788,6 +803,27 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   acceptBtnText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'black',
+  },
+  // ✅ 导航按钮样式
+  navigationBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary, // 明亮黄色
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  navigationBtnText: {
     fontSize: 18,
     fontWeight: '700',
     color: 'black',

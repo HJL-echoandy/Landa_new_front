@@ -20,39 +20,70 @@ Notifications.setNotificationHandler({
   }),
 });
 
+import firebase from '@react-native-firebase/app';
+
+// ... 其他 import
+
 /**
  * 请求通知权限并获取 FCM Push Token
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  console.log('🚀 registerForPushNotifications 函数被调用');
+  
   let token: string | null = null;
 
   // 1. 检查是否是真实设备
+  console.log('📱 检查设备类型，Device.isDevice =', Device.isDevice);
   if (!Device.isDevice) {
     console.warn('⚠️ 推送通知需要在真实设备上使用');
     return null;
   }
 
   try {
-    // 2. 请求 Firebase 通知权限（Android）
-    if (Platform.OS === 'android') {
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    // 确保 Firebase 已初始化
+    if (!firebase.apps.length) {
+      console.log('🔥 Firebase 尚未初始化，正在尝试初始化...');
+      const firebaseConfig = {
+        apiKey: "AIzaSyD1tXcdnRFAX83EvWW8WxCV_Wqkn85kol8",
+        appId: "1:600766517998:android:4aede6718156d4f6d719ff",
+        projectId: "landa-486fe",
+        messagingSenderId: "600766517998",
+        storageBucket: "landa-486fe.firebasestorage.app",
+        databaseURL: "https://landa-486fe.firebaseio.com",
+      };
+      await firebase.initializeApp(firebaseConfig);
+      console.log('✅ Firebase 初始化完成');
+    }
 
-      if (!enabled) {
-        console.warn('⚠️ 未获得 Firebase 通知权限');
-        return null;
+    console.log('🔔 开始请求 FCM 权限和 Token...');
+    
+    // 2. 请求 Firebase 通知权限
+    if (Platform.OS === 'android') {
+      try {
+        const authStatus = await messaging().requestPermission();
+        console.log('📋 权限状态:', authStatus);
+        
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+        if (!enabled) {
+          console.warn('⚠️ 未获得 Firebase 通知权限');
+          return null;
+        }
+        
+        console.log('✅ Firebase 通知权限已获得');
+      } catch (permError) {
+        console.error('❌ 请求权限时出错:', permError);
       }
-      
-      console.log('✅ Firebase 通知权限已获得');
     }
 
     // 3. 获取 FCM Token
+    console.log('📲 正在获取 FCM Token...');
     token = await messaging().getToken();
     console.log('📱 FCM Push Token:', token);
 
-    // 4. Android 通知频道配置
+    // ... 后续代码
     if (Platform.OS === 'android') {
       // 订单通知频道
       await Notifications.setNotificationChannelAsync('orders', {
@@ -73,6 +104,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
         sound: 'default',
         showBadge: true,
       });
+      
+      console.log('✅ Android 通知频道已配置');
     }
 
     // 5. 监听 Token 刷新
@@ -83,11 +116,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     return token;
   } catch (error: any) {
+    console.error('❌ 获取 FCM Push Token 失败:', error);
+    console.error('错误详情:', JSON.stringify(error));
+    
     // Firebase 未配置的错误是预期的，不需要展示给用户
     if (error?.message?.includes('Firebase') || error?.message?.includes('google-services')) {
       console.warn('⚠️ Firebase 未配置，推送通知功能暂时不可用（这不影响应用的其他功能）');
-    } else {
-      console.error('❌ 获取 FCM Push Token 失败:', error);
     }
     return null;
   }
@@ -252,59 +286,52 @@ export async function clearBadge() {
 }
 
 /**
- * 设置 Firebase 后台消息处理
- * 当应用在后台或退出状态收到通知时触发
+ * 设置 Firebase 前台和通知交互处理
+ * 注意：后台消息处理器必须在 index.ts 中设置
  */
-export function setupFirebaseBackgroundHandler() {
-  // 后台消息处理
-  messaging().setBackgroundMessageHandler(async remoteMessage => {
-    console.log('📨 后台收到 FCM 消息:', remoteMessage);
-    
-    // 在后台收到消息时，Firebase 会自动显示通知
-    // 我们可以在这里做额外的数据处理或日志记录
-    if (remoteMessage.data) {
-      console.log('📦 消息数据:', remoteMessage.data);
-    }
-  });
-
-  // 处理用户点击通知打开应用的情况
-  messaging().onNotificationOpenedApp(remoteMessage => {
-    console.log('📲 用户点击通知打开应用:', remoteMessage);
-    
-    // 根据通知类型导航到相应页面
-    if (remoteMessage.data?.screen) {
-      const screen = remoteMessage.data.screen as string;
-      const params = remoteMessage.data;
+export function setupFirebaseNotificationHandlers() {
+  try {
+    // 处理用户点击通知打开应用的情况（后台状态）
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('📲 用户点击通知打开应用:', remoteMessage);
       
-      setTimeout(() => {
-        if (navigationRef.isReady()) {
-          navigationRef.navigate(screen as any, params as any);
-        }
-      }, 1000);
-    }
-  });
-
-  // 检查应用是否是通过通知启动的（完全退出状态）
-  messaging()
-    .getInitialNotification()
-    .then(remoteMessage => {
-      if (remoteMessage) {
-        console.log('📲 应用由通知启动:', remoteMessage);
+      // 根据通知类型导航到相应页面
+      if (remoteMessage.data?.screen) {
+        const screen = remoteMessage.data.screen as string;
+        const params = remoteMessage.data;
         
-        // 根据通知类型导航到相应页面
-        if (remoteMessage.data?.screen) {
-          const screen = remoteMessage.data.screen as string;
-          const params = remoteMessage.data;
-          
-          setTimeout(() => {
-            if (navigationRef.isReady()) {
-              navigationRef.navigate(screen as any, params as any);
-            }
-          }, 2000);
-        }
+        setTimeout(() => {
+          if (navigationRef.isReady()) {
+            navigationRef.navigate(screen as any, params as any);
+          }
+        }, 1000);
       }
     });
 
-  console.log('✅ Firebase 后台消息处理器已设置');
+    // 检查应用是否是通过通知启动的（完全退出状态）
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('📲 应用由通知启动:', remoteMessage);
+          
+          // 根据通知类型导航到相应页面
+          if (remoteMessage.data?.screen) {
+            const screen = remoteMessage.data.screen as string;
+            const params = remoteMessage.data;
+            
+            setTimeout(() => {
+              if (navigationRef.isReady()) {
+                navigationRef.navigate(screen as any, params as any);
+              }
+            }, 2000);
+          }
+        }
+      });
+
+    console.log('✅ Firebase 通知交互处理器已设置');
+  } catch (error) {
+    console.warn('⚠️ 设置 Firebase 通知处理器失败:', error);
+  }
 }
 

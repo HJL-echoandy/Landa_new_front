@@ -307,9 +307,17 @@ export default function IncomeScreen() {
                   <Text style={styles.historySub}>可立即提现</Text>
                 </View>
               </View>
-              <Text style={[styles.historyAmount, { color: COLORS.success }]}>
-                ¥ {incomeSummary.available_balance.toFixed(2)}
-              </Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.historyAmount, { color: COLORS.success }]}>
+                  ¥ {incomeSummary.available_balance.toFixed(2)}
+                </Text>
+                <TouchableOpacity 
+                  style={{ marginTop: 4, backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}
+                  onPress={() => navigation.navigate('Withdraw' as any)}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>立即提现</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}

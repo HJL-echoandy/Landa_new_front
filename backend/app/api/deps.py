@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.models.user import User
+from app.models.therapist import Therapist
 
 # Bearer Token 认证
 security = HTTPBearer()
@@ -120,4 +121,25 @@ def require_role(*allowed_roles: str):
         return current_user
     
     return role_checker
+
+
+async def get_current_therapist(
+    current_user: User = Depends(require_role("therapist")),
+    db: AsyncSession = Depends(get_db)
+) -> Therapist:
+    """
+    获取当前登录的技师对象
+    """
+    result = await db.execute(
+        select(Therapist).where(Therapist.user_id == current_user.id)
+    )
+    therapist = result.scalar_one_or_none()
+    
+    if not therapist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="技师档案不存在"
+        )
+    
+    return therapist
 
