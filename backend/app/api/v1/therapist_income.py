@@ -9,12 +9,13 @@ from sqlalchemy import select, and_, or_, func
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.api.deps import require_role
+from app.api.deps import require_role, get_current_therapist
 from app.models.user import User, UserRole
 from app.models.therapist import Therapist
 from app.models.service import Service
 from app.models.booking import Booking, BookingStatus
 from app.models.order import Order
+from app.models.finance import TherapistBalance, Withdrawal, WithdrawalStatus
 
 router = APIRouter()
 
@@ -85,21 +86,10 @@ class IncomeDetailsResponse(BaseModel):
 
 @router.get("/summary", response_model=IncomeSummary, summary="获取收入汇总")
 async def get_income_summary(
-    current_user: User = Depends(require_role(UserRole.THERAPIST)),
+    current_therapist: Therapist = Depends(get_current_therapist),
     db: AsyncSession = Depends(get_db)
 ):
     """获取技师收入汇总数据"""
-    # 获取技师信息
-    therapist_result = await db.execute(
-        select(Therapist).where(Therapist.user_id == current_user.id)
-    )
-    therapist = therapist_result.scalar_one_or_none()
-    
-    if not therapist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="技师档案不存在"
-        )
     
     # 计算今日收入
     today = date.today()
@@ -107,7 +97,7 @@ async def get_income_summary(
         select(func.sum(Booking.total_price))
         .where(
             and_(
-                Booking.therapist_id == therapist.id,
+                Booking.therapist_id == current_therapist.id,
                 Booking.status == BookingStatus.COMPLETED,
                 Booking.booking_date == today
             )
@@ -121,7 +111,7 @@ async def get_income_summary(
         select(func.sum(Booking.total_price))
         .where(
             and_(
-                Booking.therapist_id == therapist.id,
+                Booking.therapist_id == current_therapist.id,
                 Booking.status == BookingStatus.COMPLETED,
                 Booking.booking_date >= week_start
             )
@@ -135,7 +125,7 @@ async def get_income_summary(
         select(func.sum(Booking.total_price))
         .where(
             and_(
-                Booking.therapist_id == therapist.id,
+                Booking.therapist_id == current_therapist.id,
                 Booking.status == BookingStatus.COMPLETED,
                 Booking.booking_date >= month_start
             )
@@ -148,18 +138,43 @@ async def get_income_summary(
         select(func.sum(Booking.total_price))
         .where(
             and_(
-                Booking.therapist_id == therapist.id,
+                Booking.therapist_id == current_therapist.id,
                 Booking.status == BookingStatus.COMPLETED
             )
         )
     )
     total_income = total_income_result.scalar() or 0.0
     
-    # 简化处理：假设所有收入都可提现，冻结金额为0
-    # 实际项目中需要根据业务规则计算可提现余额和冻结金额
-    available_balance = total_income * 0.7  # 假设平台分成30%，技师得70%
-    frozen_balance = 0.0
-    total_withdrawn = 0.0  # TODO: 从提现记录中计算
+    # ✅ 从 TherapistBalance 表获取余额信息
+    balance_result = await db.execute(
+        select(TherapistBalance).where(
+            TherapistBalance.therapist_id == current_therapist.id
+        )
+    )
+    balance = balance_result.scalar_one_or_none()
+    
+    if balance:
+        # 使用数据库中的实际余额
+        available_balance = balance.balance
+        frozen_balance = balance.frozen_amount
+        total_income_from_balance = balance.total_income
+    else:
+        # 如果还没有余额记录，使用计算值
+        available_balance = total_income * 0.7  # 假设平台分成30%，技师得70%
+        frozen_balance = 0.0
+        total_income_from_balance = total_income
+    
+    # 计算累计提现金额
+    total_withdrawn_result = await db.execute(
+        select(func.sum(Withdrawal.amount))
+        .where(
+            and_(
+                Withdrawal.therapist_id == current_therapist.id,
+                Withdrawal.status.in_([WithdrawalStatus.APPROVED, WithdrawalStatus.PAID])
+            )
+        )
+    )
+    total_withdrawn = total_withdrawn_result.scalar() or 0.0
     
     return IncomeSummary(
         today=today_income,
@@ -175,21 +190,10 @@ async def get_income_summary(
 @router.get("/statistics", response_model=IncomeStatistics, summary="获取收入统计")
 async def get_income_statistics(
     period: str = Query(..., description="统计周期: today/this_week/this_month"),
-    current_user: User = Depends(require_role(UserRole.THERAPIST)),
+    current_therapist: Therapist = Depends(get_current_therapist),
     db: AsyncSession = Depends(get_db)
 ):
     """获取技师收入统计数据"""
-    # 获取技师信息
-    therapist_result = await db.execute(
-        select(Therapist).where(Therapist.user_id == current_user.id)
-    )
-    therapist = therapist_result.scalar_one_or_none()
-    
-    if not therapist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="技师档案不存在"
-        )
     
     # 根据周期计算日期范围
     today = date.today()
@@ -214,7 +218,7 @@ async def get_income_statistics(
         .join(Service, Booking.service_id == Service.id)
         .where(
             and_(
-                Booking.therapist_id == therapist.id,
+                Booking.therapist_id == current_therapist.id,
                 Booking.status == BookingStatus.COMPLETED,
                 Booking.booking_date >= start_date,
                 Booking.booking_date <= end_date
@@ -280,25 +284,14 @@ async def get_income_details(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     settled: Optional[bool] = Query(None, description="是否已结算"),
-    current_user: User = Depends(require_role(UserRole.THERAPIST)),
+    current_therapist: Therapist = Depends(get_current_therapist),
     db: AsyncSession = Depends(get_db)
 ):
     """获取技师收入明细列表"""
-    # 获取技师信息
-    therapist_result = await db.execute(
-        select(Therapist).where(Therapist.user_id == current_user.id)
-    )
-    therapist = therapist_result.scalar_one_or_none()
-    
-    if not therapist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="技师档案不存在"
-        )
     
     # 构建查询条件
     conditions = [
-        Booking.therapist_id == therapist.id,
+        Booking.therapist_id == current_therapist.id,
         Booking.status == BookingStatus.COMPLETED
     ]
     

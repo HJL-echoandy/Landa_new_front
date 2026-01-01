@@ -15,6 +15,7 @@ from app.models.therapist import Therapist
 from app.models.service import Service
 from app.models.booking import Booking, BookingStatus
 from app.models.order import Order
+from app.models.finance import TherapistBalance, Transaction, TransactionType
 
 router = APIRouter()
 
@@ -561,6 +562,47 @@ async def checkin_order(
         booking.service_completed_at = now
         booking.status = BookingStatus.COMPLETED
         therapist.completed_count += 1
+        
+        # ✅ 更新技师余额和创建收入流水
+        # 计算技师收入（假设平台抽成30%，技师得70%）
+        commission_rate = 0.7
+        therapist_income = booking.total_price * commission_rate
+        
+        # 1. 获取或创建技师余额记录
+        balance_result = await db.execute(
+            select(TherapistBalance).where(
+                TherapistBalance.therapist_id == therapist.id
+            )
+        )
+        balance = balance_result.scalar_one_or_none()
+        
+        if not balance:
+            # 首次完成订单，创建余额记录
+            balance = TherapistBalance(
+                therapist_id=therapist.id,
+                balance=therapist_income,
+                total_income=therapist_income,
+                frozen_amount=0.0
+            )
+            db.add(balance)
+        else:
+            # 更新余额
+            balance.balance += therapist_income
+            balance.total_income += therapist_income
+            balance.updated_at = now
+        
+        # 2. 创建收入流水记录
+        transaction = Transaction(
+            therapist_id=therapist.id,
+            type=TransactionType.INCOME,
+            amount=therapist_income,
+            balance_after=balance.balance,
+            description=f"完成订单 {booking.booking_no}",
+            reference_id=str(booking.id),
+            created_at=now
+        )
+        db.add(transaction)
+        
         message = "完成服务打卡成功"
     else:
         raise HTTPException(
